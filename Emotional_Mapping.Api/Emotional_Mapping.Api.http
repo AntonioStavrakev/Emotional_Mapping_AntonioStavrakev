@@ -1,0 +1,6 @@
+@Emotional_Mapping.Api_HostAddress = http://localhost:5052
+
+GET {{Emotional_Mapping.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Emotional_Mapping.Application\Emotional_Mapping.Application.csproj" />
+      <ProjectReference Include="..\Emotional_Mapping.Domain\Emotional_Mapping.Domain.csproj" />
+    </ItemGroup>
+
+</Project>
