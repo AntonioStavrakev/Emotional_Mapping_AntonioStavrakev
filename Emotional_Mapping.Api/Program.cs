@@ -1,41 +1,52 @@
+using Emotional_Mapping.Api.Payments;
+using Emotional_Mapping.Infrastructure.Data;
+using Emotional_Mapping.Infrastructure.Data.Seed;
+using FluentValidation.AspNetCore;
+using Emotional_Mapping.Infrastructure;
+using Emotional_Mapping.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services
+    .AddControllers()
+    .AddFluentValidation(fv =>
+    {
+        fv.RegisterValidatorsFromAssemblyContaining<
+            Emotional_Mapping.Application.Validation.GenerateMapRequestDtoValidator>();
+        fv.DisableDataAnnotationsValidation = true;
+    });
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<StripeOptions>(
+    builder.Configuration.GetSection("Stripe"));
+
+builder.Services.AddEmotionalMappingInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+app.MapControllers();
+
+using (var scope = app.Services.CreateScope())
+{
+    var sp = scope.ServiceProvider;
+
+    var db = sp.GetRequiredService<AppDbContext>();
+    await DbSeeder.SeedAsync(db, CancellationToken.None);
+
+    var roleManager = sp.GetRequiredService<RoleManager<IdentityRole>>();
+    var userManager = sp.GetRequiredService<UserManager<ApplicationUser>>();
+    await RoleSeeder.SeedAsync(roleManager, userManager);
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

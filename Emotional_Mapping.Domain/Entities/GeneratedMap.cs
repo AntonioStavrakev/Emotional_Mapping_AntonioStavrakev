@@ -13,10 +13,11 @@ public class GeneratedMap
     public MapVisibility Visibility { get; private set; } = MapVisibility.Private;
 
     public EmotionType DominantEmotion { get; private set; }
-    public double Confidence { get; private set; } // 0..1
+    public double Confidence { get; private set; }
     public string? Summary { get; private set; }
     public string? HeatmapJson { get; private set; }
     public string? PublicSlug { get; private set; }
+    public string? ShareToken { get; private set; }
 
     public DateTime GeneratedAtUtc { get; private set; }
 
@@ -33,7 +34,8 @@ public class GeneratedMap
         MapVisibility visibility = MapVisibility.Private,
         string? summary = null,
         string? heatmapJson = null,
-        string? publicSlug = null)
+        string? publicSlug = null,
+        string? shareToken = null)
     {
         if (mapRequestId == Guid.Empty) throw new ArgumentException("MapRequestId required.", nameof(mapRequestId));
 
@@ -47,6 +49,7 @@ public class GeneratedMap
         HeatmapJson = heatmapJson;
         PublicSlug = publicSlug;
         GeneratedAtUtc = DateTime.UtcNow;
+        ShareToken = shareToken;
     }
 
     public void SetHeatmap(string? heatmapJson) => HeatmapJson = heatmapJson;
@@ -54,4 +57,22 @@ public class GeneratedMap
     public void AddRecommendation(MapRecommendation rec) => _recommendations.Add(rec);
 
     public void SetVisibility(MapVisibility v) => Visibility = v;
+
+    public void Publish(string slug)
+    {
+        Visibility = MapVisibility.Public;
+        PublicSlug = slug;
+    }
+
+    public void MakePrivate()
+    {
+        Visibility = MapVisibility.Private;
+        PublicSlug = null;
+    }
+
+    public void MakePublic()
+    {
+        Visibility = MapVisibility.Public;
+        ShareToken = Guid.NewGuid().ToString("N");
+    }
 }
