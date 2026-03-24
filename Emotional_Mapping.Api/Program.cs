@@ -1,20 +1,18 @@
 using Emotional_Mapping.Api.Payments;
+using Emotional_Mapping.Application.Validation;
 using Emotional_Mapping.Infrastructure.Data;
 using Emotional_Mapping.Infrastructure.Data.Seed;
 using FluentValidation.AspNetCore;
 using Emotional_Mapping.Infrastructure;
 using Emotional_Mapping.Infrastructure.Identity;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services
-    .AddControllers()
-    .AddFluentValidation(fv =>
-    {
-        fv.RegisterValidatorsFromAssemblyContaining<
-            Emotional_Mapping.Application.Validation.GenerateMapRequestDtoValidator>();
-        fv.DisableDataAnnotationsValidation = true;
-    });
+builder.Services.AddControllers();
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<GenerateMapRequestDtoValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

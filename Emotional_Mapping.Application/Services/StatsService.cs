@@ -28,7 +28,7 @@ public class StatsService
                 .GroupBy(x => x.SelectedEmotion!.ToString())
                 .Select(g => new EmotionStatDto
                 {
-                    Emotion = g.Key,
+                    Emotion = g.Key ?? "Unknown",
                     Count = g.Count()
                 })
                 .OrderByDescending(x => x.Count)

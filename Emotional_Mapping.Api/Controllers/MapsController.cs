@@ -75,15 +75,4 @@ public class MapsController : ControllerBase
 
         return Ok(map);
     }
-    [AllowAnonymous]
-    [HttpGet("public/{token}")]
-    public async Task<IActionResult> GetPublic(string token, CancellationToken ct)
-    {
-        var map = await _maps.GetBySlugAsync(token, ct);
-
-        if (map == null)
-            return NotFound();
-
-        return Ok(map);
-    }
 }
