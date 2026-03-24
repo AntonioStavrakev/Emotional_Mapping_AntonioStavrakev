@@ -1,0 +1,51 @@
+@model Emotional_Mapping.Web.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Вход";
+}
+
+<div class="auth-wrap fade-up">
+    <div class="auth-card">
+        <h1 class="auth-title">Добре дошъл</h1>
+        <p class="auth-sub">Влез в профила си, за да продължиш.</p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Error as string))
+        {
+            <div class="em-alert em-alert-error">@ViewBag.Error</div>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.Success as string))
+        {
+            <div class="em-alert em-alert-ok">@ViewBag.Success</div>
+        }
+
+        <form asp-controller="Account" asp-action="Login" method="post">
+            @Html.AntiForgeryToken()
+            <div class="em-form-group">
+                <label class="em-label" asp-for="Email">Имейл</label>
+                <input class="em-input" asp-for="Email" type="email"
+                       placeholder="you@example.com" autocomplete="email" required/>
+                <span asp-validation-for="Email"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label" asp-for="Password">Парола</label>
+                <input class="em-input" asp-for="Password" type="password"
+                       placeholder="••••••••" required/>
+                <span asp-validation-for="Password"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <button type="submit" class="btn-em btn-em-primary"
+                    style="width:100%;justify-content:center;padding:.75rem;">
+                Влез в профила
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Нямаш профил?
+            <a href="/Account/Register">Регистрирай се</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

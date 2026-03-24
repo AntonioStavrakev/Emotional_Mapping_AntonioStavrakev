@@ -1,30 +1,43 @@
 using Emotional_Mapping.Application.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Emotional_Mapping.Web.Controllers;
 
 public class MapController : Controller
 {
-    private readonly HttpClient _http;
-
-    public MapController(IHttpClientFactory httpFactory)
+    // GET /Map — обща карта (достъпна за всички)
+    [AllowAnonymous]
+    public IActionResult Index()
     {
-        _http = httpFactory.CreateClient("api");
+        return View();
     }
 
-    [HttpGet]
+    // GET /Map/Generate — форма за генериране
+    [AllowAnonymous]
     public IActionResult Generate()
-    { 
-        return View(new GenerateMapRequestDto());
+    {
+        return View();
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Generate(GenerateMapRequestDto dto, CancellationToken ct)
+    // GET /Map/Result?mapId=...
+    [AllowAnonymous]
+    public IActionResult Result()
     {
-        var res = await _http.PostAsJsonAsync("/api/maps/generate", dto, ct);
-        res.EnsureSuccessStatusCode();
+        return View();
+    }
 
-        var data = await res.Content.ReadFromJsonAsync<GenerateMapResultDto>(cancellationToken: ct);
-        return View("Map", data);
+    // GET /Map/MyMaps — само за регистрирани
+    [Authorize]
+    public IActionResult MyMaps()
+    {
+        return View();
+    }
+
+    // GET /Map/AddPlace — само за регистрирани
+    [Authorize]
+    public IActionResult AddPlace()
+    {
+        return View();
     }
 }

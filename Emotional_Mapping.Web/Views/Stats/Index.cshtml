@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "Статистики";
+}
+
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">Статистики</h1>
+    <p class="em-page-sub">Обобщени данни от емоционалната карта</p>
+</div>
+
+<div class="stats4 fade-up fade-up-1">
+    <div class="stat-card">
+        <div class="stat-card__label">Общо точки</div>
+        <div class="stat-card__value" id="stTotal">—</div>
+        <div class="stat-card__sub">в базата данни</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Доминираща емоция</div>
+        <div class="stat-card__value" id="stDom" style="font-size:1.4rem;">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Генерирани карти</div>
+        <div class="stat-card__value" id="stMaps">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Активни потребители</div>
+        <div class="stat-card__value" id="stUsers">—</div>
+    </div>
+</div>
+
+<div class="stats2 fade-up fade-up-2">
+    <div class="em-card">
+        <div class="em-card__title">Разпределение на емоциите</div>
+        <div id="ebarWrap">
+            <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
+        </div>
+    </div>
+    <div class="em-card">
+        <div class="em-card__title">Активност (последните 7 дни)</div>
+        <div class="tl-wrap" id="tlChart"></div>
+        <div class="tl-lbls" id="tlLbls"></div>
+    </div>
+</div>
+
+<div class="em-card fade-up fade-up-3">
+    <div class="em-card__title" style="margin-bottom:1.25rem;">Най-позитивни райони</div>
+    <div id="districtList">
+        <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+var ec = {
+    Joy:'#f6c948', Calm:'#5bc8c2', Sadness:'#6382c8',
+    Anger:'#e85555', Fear:'#9c6ee8', Romantic:'#e87090'
+};
+
+fetch('/api/stats?cityId=00000000-0000-0000-0000-000000000000')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(s) {
+        if (!s) return;
+        document.getElementById('stTotal').textContent = s.totalPoints || '—';
+        document.getElementById('stMaps').textContent  = s.totalMaps  || '—';
+        document.getElementById('stUsers').textContent = s.totalUsers  || '—';
+        document.getElementById('stDom').textContent   = s.dominantEmotion || '—';
+
+        if (s.emotionStats && s.emotionStats.length) {
+            var mx = Math.max.apply(null, s.emotionStats.map(function(e) { return e.count; })) || 1;
+            document.getElementById('ebarWrap').innerHTML = s.emotionStats.map(function(e) {
+                return '<div class="ebar-row">'
+                    + '<span class="ebar-lbl">' + esc(e.emotion || '') + '</span>'
+                    + '<div class="ebar-track"><div class="ebar-fill" style="width:'
+                    + Math.round(e.count / mx * 100) + '%;background:' + (ec[e.emotion] || '#7c6ff7')
+                    + '"></div></div>'
+                    + '<span class="ebar-cnt">' + e.count + '</span></div>';
+            }).join('');
+        }
+    }).catch(function() {});
+
+fetch('/api/stats/timeline?cityId=00000000-0000-0000-0000-000000000000')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(tl) {
+        if (!tl || !tl.length) return;
+        var mx = Math.max.apply(null, tl.map(function(d) { return d.count; })) || 1;
+        document.getElementById('tlChart').innerHTML = tl.map(function(d) {
+            return '<div class="tl-bar" style="height:'
+                + Math.max(Math.round(d.count / mx * 80), 4)
+                + 'px;background:#7c6ff7;opacity:.7" data-tip="'
+                + esc(d.date) + ': ' + d.count + '"></div>';
+        }).join('');
+        document.getElementById('tlLbls').innerHTML = tl.map(function(d) {
+            return '<span style="font-size:.62rem;color:#6b7080;flex:1;text-align:center">'
+                + new Date(d.date).toLocaleDateString('bg', { day: '2-digit', month: '2-digit' })
+                + '</span>';
+        }).join('');
+    }).catch(function() {});
+
+fetch('/api/stats/district-scores?cityId=00000000-0000-0000-0000-000000000000')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(ds) {
+        if (!ds || !ds.length) {
+            document.getElementById('districtList').innerHTML = '<p style="color:#6b7080">Няма данни.</p>';
+            return;
+        }
+        document.getElementById('districtList').innerHTML = ds.slice(0, 10).map(function(d, i) {
+            return '<div class="drow">'
+                + '<div style="display:flex;align-items:center;gap:.75rem;">'
+                + '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:.85rem;'
+                + 'color:#6b7080;min-width:1.5rem;">' + (i + 1) + '</span>'
+                + '<strong style="font-size:.875rem;">' + esc(d.districtName || '') + '</strong></div>'
+                + '<div style="display:flex;align-items:center;gap:1rem;">'
+                + '<span class="em-badge em-badge-joy">' + esc(d.dominantEmotion || '') + '</span>'
+                + '<span style="font-size:.78rem;color:#6b7080;">' + d.pointCount + ' точки</span>'
+                + '</div></div>';
+        }).join('');
+    }).catch(function() {
+        document.getElementById('districtList').innerHTML = '<p style="color:#6b7080">Няма данни.</p>';
+    });
+
+function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+</script>
+}

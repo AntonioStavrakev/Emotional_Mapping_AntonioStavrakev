@@ -11,7 +11,7 @@ public class GeneratedMapConfiguration : IEntityTypeConfiguration<GeneratedMap>
         b.Property(x => x.Title).HasMaxLength(200);
         b.Property(x => x.Summary).HasMaxLength(800);
         b.Property(x => x.PublicSlug).HasMaxLength(200);
-        b.Property(x => x.HeatmapJson).HasColumnType("longtext");
+        b.Property(x => x.HeatmapJson).HasColumnType("text");
 
         b.Navigation(x => x.Recommendations).UsePropertyAccessMode(PropertyAccessMode.Field);
 

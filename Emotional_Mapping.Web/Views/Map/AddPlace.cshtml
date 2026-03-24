@@ -1,0 +1,202 @@
+@{
+    ViewData["Title"] = "Добави място";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">Добави място</h1>
+    <p class="em-page-sub">Маркирай позиция на картата и добави емоционална точка ръчно</p>
+</div>
+
+<div id="alertBox"></div>
+
+<div class="add-grid fade-up fade-up-1">
+    <div class="add-form">
+        <h2 class="add-form__title">Нова точка</h2>
+        <div class="click-hint">Щракни върху картата за да избереш позиция</div>
+
+        <form id="addForm">
+            <div class="em-form-group">
+                <label class="em-label">Град</label>
+                <select class="em-select" id="citySel" required>
+                    <option value="">— Избери град —</option>
+                </select>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label">Координати</label>
+                <div class="coords-row">
+                    <input class="em-input" id="latInp" placeholder="Ширина"  readonly/>
+                    <input class="em-input" id="lngInp" placeholder="Дължина" readonly/>
+                </div>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label">Заглавие (по избор)</label>
+                <input class="em-input" id="titleInp" placeholder="Напр. Приятна градинка..."/>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label">Избери емоция</label>
+                <div class="em-grid3">
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Joy"/>
+                        <span>&#128516;</span>Радост
+                    </label>
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Calm"/>
+                        <span>&#128524;</span>Спокой
+                    </label>
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Sadness"/>
+                        <span>&#128546;</span>Тъга
+                    </label>
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Anger"/>
+                        <span>&#128545;</span>Гняв
+                    </label>
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Fear"/>
+                        <span>&#128552;</span>Страх
+                    </label>
+                    <label class="echip">
+                        <input type="radio" name="emotion" value="Romantic"/>
+                        <span>&#128149;</span>Романтика
+                    </label>
+                </div>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label">Интензитет (1–5)</label>
+                <div class="int-row">
+                    <input type="range" min="1" max="5" value="3" id="intSlider"/>
+                    <span class="int-val" id="intVal">3</span>
+                </div>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label">Описание</label>
+                <textarea class="em-textarea" id="noteInp" rows="3"
+                    placeholder="Защо това място предизвиква тази емоция?"></textarea>
+            </div>
+            <div class="em-form-group" style="display:flex;align-items:center;gap:.75rem;">
+                <input type="checkbox" id="anonChk"
+                       style="accent-color:#7c6ff7;width:16px;height:16px;"/>
+                <label for="anonChk" style="font-size:.875rem;color:#6b7080;cursor:pointer;">
+                    Добави анонимно
+                </label>
+            </div>
+            <button type="submit" id="subBtn" class="btn-em btn-em-primary"
+                    style="width:100%;justify-content:center;padding:.8rem;" disabled>
+                &#128190; Запази точката
+            </button>
+        </form>
+    </div>
+
+    <div id="addMap"
+         style="height:500px;border-radius:14px;border:1px solid rgba(255,255,255,.07);"></div>
+</div>
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var amap = L.map('addMap').setView([42.15, 24.75], 12);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy;CartoDB', maxZoom: 19 }).addTo(amap);
+
+var pin = null;
+
+amap.on('click', function(e) {
+    document.getElementById('latInp').value = e.latlng.lat.toFixed(6);
+    document.getElementById('lngInp').value = e.latlng.lng.toFixed(6);
+    document.getElementById('subBtn').disabled = false;
+    if (pin) amap.removeLayer(pin);
+    pin = L.marker([e.latlng.lat, e.latlng.lng], {
+        icon: L.divIcon({
+            className: '',
+            html: '<div style="width:18px;height:18px;border-radius:50%;background:#7c6ff7;'
+                + 'border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>',
+            iconSize: [18, 18], iconAnchor: [9, 9]
+        })
+    }).addTo(amap);
+});
+
+document.querySelectorAll('.echip').forEach(function(c) {
+    c.addEventListener('click', function() {
+        document.querySelectorAll('.echip').forEach(function(x) { x.classList.remove('on'); });
+        this.classList.add('on');
+    });
+});
+
+fetch('/api/cities')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(cs) {
+        var s = document.getElementById('citySel');
+        (cs || []).forEach(function(c) {
+            var o = document.createElement('option');
+            o.value = c.id; o.textContent = c.name;
+            o.dataset.lat = c.latitude; o.dataset.lng = c.longitude;
+            s.appendChild(o);
+        });
+    }).catch(function() {});
+
+document.getElementById('citySel').addEventListener('change', function() {
+    var o = this.options[this.selectedIndex];
+    if (o.dataset.lat) amap.setView([+o.dataset.lat, +o.dataset.lng], 13);
+});
+
+document.getElementById('intSlider').addEventListener('input', function() {
+    document.getElementById('intVal').textContent = this.value;
+});
+
+document.getElementById('addForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var lat     = document.getElementById('latInp').value;
+    var lng     = document.getElementById('lngInp').value;
+    var emotion = document.querySelector('input[name="emotion"]:checked');
+
+    if (!lat || !lng) { showAlert('error', 'Избери позиция на картата.'); return; }
+    if (!emotion)     { showAlert('error', 'Избери емоция.'); return; }
+
+    var btn = document.getElementById('subBtn');
+    btn.disabled = true; btn.textContent = 'Запазване...';
+
+    try {
+        var r = await fetch('/api/points', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cityId:      document.getElementById('citySel').value,
+                lat:         parseFloat(lat),
+                lng:         parseFloat(lng),
+                title:       document.getElementById('titleInp').value || null,
+                emotion:     emotion.value,
+                intensity:   parseInt(document.getElementById('intSlider').value),
+                note:        document.getElementById('noteInp').value || null,
+                isAnonymous: document.getElementById('anonChk').checked
+            })
+        });
+
+        if (r.ok) {
+            showAlert('ok', 'Точката е запазена успешно!');
+            document.getElementById('addForm').reset();
+            document.getElementById('latInp').value = '';
+            document.getElementById('lngInp').value = '';
+            document.getElementById('intVal').textContent = '3';
+            document.querySelectorAll('.echip').forEach(function(c) { c.classList.remove('on'); });
+            if (pin) { amap.removeLayer(pin); pin = null; }
+        } else if (r.status === 401) {
+            showAlert('error', 'Трябва да <a href="/Account/Login" style="color:#7c6ff7">влезеш</a>.');
+        } else {
+            var err = await r.json().catch(function() { return {}; });
+            showAlert('error', err.message || 'Грешка при запазване.');
+        }
+    } catch (ex) { showAlert('error', 'Мрежова грешка.'); }
+    finally { btn.disabled = false; btn.textContent = 'Запази точката'; }
+});
+
+function showAlert(t, m) {
+    document.getElementById('alertBox').innerHTML =
+        '<div class="em-alert em-alert-' + t + '">' + m + '</div>';
+    if (t === 'ok') setTimeout(function() {
+        document.getElementById('alertBox').innerHTML = '';
+    }, 4000);
+}
+</script>
+}

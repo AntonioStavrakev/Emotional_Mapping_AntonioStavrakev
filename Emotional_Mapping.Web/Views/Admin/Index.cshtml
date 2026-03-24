@@ -1,0 +1,272 @@
+@{
+    ViewData["Title"] = "Admin Panel";
+}
+
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">&#9889; Admin панел</h1>
+    <p class="em-page-sub">Управление на потребители, емоции и AI статистики</p>
+</div>
+
+<div class="adm4 fade-up fade-up-1">
+    <div class="stat-card"><div class="stat-card__label">Потребители</div><div class="stat-card__value" id="aUsers">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">SuperUsers</div><div class="stat-card__value" id="aSuper">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">AI заявки днес</div><div class="stat-card__value" id="aAI">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">Точки общо</div><div class="stat-card__value" id="aPoints">—</div></div>
+</div>
+
+<div class="tabs fade-up fade-up-2">
+    <button class="tbtn on" onclick="showTab('users',this)">Потребители</button>
+    <button class="tbtn" onclick="showTab('emotions',this)">Емоции</button>
+    <button class="tbtn" onclick="showTab('points',this)">Точки</button>
+    <button class="tbtn" onclick="showTab('reports',this)">Сигнали</button>
+    <button class="tbtn" onclick="showTab('ai',this)">AI Usage</button>
+</div>
+
+<div class="tp on em-card" id="tp-users">
+    <div class="srow">
+        <div class="em-card__title" style="margin:0">Всички потребители</div>
+        <input class="em-input" id="uSearch" placeholder="Търси по имейл..."
+               style="max-width:260px;"/>
+    </div>
+    <div style="overflow-x:auto">
+        <table class="em-table">
+            <thead>
+                <tr>
+                    <th>Потребител</th><th>Имейл</th>
+                    <th>Регистрация</th><th>Роля</th><th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="uBody">
+                <tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">Зареждане...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="tp em-card" id="tp-emotions">
+    <div class="em-card__title">Каталог с емоции</div>
+    <form id="addEmForm"
+          style="display:grid;grid-template-columns:1fr 1fr 110px auto;gap:.75rem;align-items:end;margin-bottom:1.5rem;">
+        <div>
+            <label class="em-label">Enum стойност</label>
+            <input class="em-input" id="emType" placeholder="Joy, Calm..."/>
+        </div>
+        <div>
+            <label class="em-label">Название (BG)</label>
+            <input class="em-input" id="emName" placeholder="Радост"/>
+        </div>
+        <div>
+            <label class="em-label">Цвят</label>
+            <input class="em-input" id="emColor" type="color" value="#7c6ff7"
+                   style="height:42px;padding:.3rem;cursor:pointer;"/>
+        </div>
+        <button type="submit" class="btn-em btn-em-primary">Добави</button>
+    </form>
+    <table class="em-table">
+        <thead><tr><th>Тип</th><th>Название</th><th>Цвят</th><th>Активна</th></tr></thead>
+        <tbody id="emBody">
+            <tr><td colspan="4" style="color:#6b7080">Зареждане...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="tp em-card" id="tp-points">
+    <div class="em-card__title">Всички емоционални точки</div>
+    <div style="overflow-x:auto;margin-top:1rem">
+        <table class="em-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Потребител</th><th>Емоция</th>
+                    <th>Инт.</th><th>Одобрена</th><th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="ptBody">
+                <tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">Зареждане...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="tp em-card" id="tp-reports">
+    <div class="em-card__title">Сигнали</div>
+    <div style="margin-top:1rem">
+        <div class="em-alert em-alert-ok">Няма нови сигнали.</div>
+    </div>
+</div>
+
+<div class="tp em-card" id="tp-ai">
+    <div class="em-card__title">AI Usage Dashboard</div>
+    <div id="aiDash" style="margin-top:1rem">
+        <p style="color:#6b7080">Зареждане...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+var allU = [];
+
+function showTab(n, btn) {
+    document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
+    document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
+    document.getElementById('tp-' + n).classList.add('on');
+    btn.classList.add('on');
+    if (n === 'users')    loadUsers();
+    if (n === 'emotions') loadEmotions();
+    if (n === 'points')   loadPoints();
+    if (n === 'ai')       loadAI();
+}
+
+function loadUsers() {
+    fetch('/api/admin/users')
+        .then(function(r) { return r.json(); })
+        .then(function(us) {
+            allU = us || [];
+            document.getElementById('aUsers').textContent = allU.length;
+            document.getElementById('aSuper').textContent =
+                allU.filter(function(u) { return u.isSuperUser; }).length;
+            renderU(allU);
+        }).catch(function() {});
+}
+
+function renderU(us) {
+    document.getElementById('uBody').innerHTML = us.length
+        ? us.map(function(u) {
+            return '<tr>'
+                + '<td><strong>' + esc(u.displayName || '—') + '</strong></td>'
+                + '<td style="color:#6b7080">' + esc(u.email || '') + '</td>'
+                + '<td style="font-size:.78rem;color:#6b7080">'
+                + (u.createdAtUtc ? new Date(u.createdAtUtc).toLocaleDateString('bg') : '—') + '</td>'
+                + '<td>' + (u.isSuperUser
+                    ? '<span class="em-badge em-badge-super">SuperUser</span>'
+                    : '<span class="em-badge em-badge-calm">User</span>') + '</td>'
+                + '<td><div style="display:flex;gap:.5rem;">'
+                + (!u.isSuperUser
+                    ? '<button class="btn-em btn-em-primary btn-em-sm" onclick="grantSU(\''
+                      + u.id + '\')">SuperUser</button>'
+                    : '<button class="btn-em btn-em-ghost btn-em-sm" onclick="revokeSU(\''
+                      + u.id + '\')">Отнеми</button>')
+                + '</div></td></tr>';
+          }).join('')
+        : '<tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">Няма потребители.</td></tr>';
+}
+
+document.getElementById('uSearch').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    renderU(allU.filter(function(u) {
+        return (u.email || '').toLowerCase().includes(q)
+            || (u.displayName || '').toLowerCase().includes(q);
+    }));
+});
+
+function grantSU(id) {
+    if (!confirm('Дай SuperUser права?')) return;
+    fetch('/api/admin/grant-superuser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id })
+    }).then(function() { loadUsers(); }).catch(function() {});
+}
+
+function revokeSU(id) {
+    if (!confirm('Отнеми SuperUser права?')) return;
+    fetch('/api/admin/revoke-superuser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: id })
+    }).then(function() { loadUsers(); }).catch(function() {});
+}
+
+function loadEmotions() {
+    fetch('/api/admin/emotions')
+        .then(function(r) { return r.json(); })
+        .then(function(items) {
+            document.getElementById('emBody').innerHTML = (items || []).map(function(e) {
+                return '<tr>'
+                    + '<td><code style="color:#7c6ff7">' + esc(e.emotion || e.type || '') + '</code></td>'
+                    + '<td>' + esc(e.displayName || '') + '</td>'
+                    + '<td><span style="display:inline-flex;align-items:center;gap:.45rem;">'
+                    + '<span style="width:15px;height:15px;border-radius:50%;background:'
+                    + esc(e.colorHex || '#888') + ';display:inline-block;"></span>'
+                    + esc(e.colorHex || '') + '</span></td>'
+                    + '<td>' + (e.isActive
+                        ? '<span class="em-badge em-badge-calm">Да</span>'
+                        : '<span class="em-badge em-badge-anger">Не</span>') + '</td>'
+                    + '</tr>';
+            }).join('') || '<tr><td colspan="4" style="color:#6b7080">Няма.</td></tr>';
+        }).catch(function() {});
+}
+
+document.getElementById('addEmForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch('/api/admin/emotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            emotion:     document.getElementById('emType').value,
+            displayName: document.getElementById('emName').value,
+            colorHex:    document.getElementById('emColor').value
+        })
+    }).then(function(r) {
+        if (r.ok) { document.getElementById('addEmForm').reset(); loadEmotions(); }
+    }).catch(function() {});
+});
+
+function loadPoints() {
+    fetch('/api/points?cityId=00000000-0000-0000-0000-000000000000')
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(pts) {
+            document.getElementById('ptBody').innerHTML = (pts || []).slice(0, 60).map(function(p) {
+                return '<tr>'
+                    + '<td style="font-size:.72rem;color:#6b7080">'
+                    + (p.id || '').substring(0, 8) + '...</td>'
+                    + '<td style="font-size:.8rem">'
+                    + (p.userId || '—').substring(0, 10) + '...</td>'
+                    + '<td><span class="em-badge em-badge-joy">' + esc(p.emotion || '') + '</span></td>'
+                    + '<td style="text-align:center">' + (p.intensity || '—') + '</td>'
+                    + '<td>' + (p.isApproved ? '&#10003;' : '&#10007;') + '</td>'
+                    + '<td><button class="btn-em btn-em-danger btn-em-sm" onclick="delPt(\''
+                    + p.id + '\')">Изтрий</button></td></tr>';
+            }).join('')
+            || '<tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">Няма.</td></tr>';
+        }).catch(function() {});
+}
+
+function delPt(id) {
+    if (!confirm('Изтриваш точката?')) return;
+    fetch('/api/admin/points/' + id, { method: 'DELETE' })
+        .then(function(r) { if (r.ok) loadPoints(); }).catch(function() {});
+}
+
+function loadAI() {
+    fetch('/api/stats/dashboard')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+            if (!d) return;
+            document.getElementById('aAI').textContent = d.totalRequestsToday || '—';
+            document.getElementById('aiDash').innerHTML =
+                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">'
+                + '<div class="stat-card"><div class="stat-card__label">Заявки днес</div>'
+                + '<div class="stat-card__value">' + (d.totalRequestsToday || '—') + '</div></div>'
+                + '<div class="stat-card"><div class="stat-card__label">Уникални потр.</div>'
+                + '<div class="stat-card__value">' + (d.uniqueUsersToday || '—') + '</div></div>'
+                + '<div class="stat-card"><div class="stat-card__label">Генерирани карти</div>'
+                + '<div class="stat-card__value">' + (d.totalMapsToday || '—') + '</div></div>'
+                + '</div>';
+        }).catch(function() {
+            document.getElementById('aiDash').innerHTML =
+                '<div class="em-alert em-alert-error">Грешка при зареждане.</div>';
+        });
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+loadUsers();
+fetch('/api/stats?cityId=00000000-0000-0000-0000-000000000000')
+    .then(function(r) { return r.json(); })
+    .then(function(s) { document.getElementById('aPoints').textContent = s.totalPoints || '—'; })
+    .catch(function() {});
+</script>
+}

@@ -7,7 +7,6 @@ using Emotional_Mapping.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services
     .AddControllers()
     .AddFluentValidation(fv =>

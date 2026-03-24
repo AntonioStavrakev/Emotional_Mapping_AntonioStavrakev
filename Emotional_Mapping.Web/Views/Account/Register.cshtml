@@ -1,0 +1,60 @@
+@model Emotional_Mapping.Web.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Регистрация";
+}
+
+<div class="auth-wrap fade-up">
+    <div class="auth-card">
+        <h1 class="auth-title">Създай профил</h1>
+        <p class="auth-sub">Безплатно. Без кредитна карта.</p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Error as string))
+        {
+            <div class="em-alert em-alert-error">@ViewBag.Error</div>
+        }
+
+        <form asp-controller="Account" asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
+            <div class="em-form-group">
+                <label class="em-label" asp-for="DisplayName">Показвано име</label>
+                <input class="em-input" asp-for="DisplayName" placeholder="Иван Иванов"/>
+                <span asp-validation-for="DisplayName"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label" asp-for="Email">Имейл</label>
+                <input class="em-input" asp-for="Email" type="email"
+                       placeholder="you@example.com" required/>
+                <span asp-validation-for="Email"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label" asp-for="Password">Парола</label>
+                <input class="em-input" asp-for="Password" type="password"
+                       placeholder="Минимум 6 символа" required/>
+                <span asp-validation-for="Password"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <div class="em-form-group">
+                <label class="em-label" asp-for="ConfirmPassword">Потвърди парола</label>
+                <input class="em-input" asp-for="ConfirmPassword" type="password"
+                       placeholder="••••••••" required/>
+                <span asp-validation-for="ConfirmPassword"
+                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+            </div>
+            <button type="submit" class="btn-em btn-em-primary"
+                    style="width:100%;justify-content:center;padding:.75rem;">
+                Създай профил
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Вече имаш профил?
+            <a href="/Account/Login">Влез</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

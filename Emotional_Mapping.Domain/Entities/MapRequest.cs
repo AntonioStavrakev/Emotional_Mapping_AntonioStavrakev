@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Emotional_Mapping.Domain.Enums;
 
 namespace Emotional_Mapping.Domain.Entities;
@@ -22,6 +23,8 @@ public class MapRequest
     public int? RadiusMeters { get; private set; }
     public double? UserLat { get; private set; }
     public double? UserLng { get; private set; }
+    
+    [Column(TypeName = "jsonb")] 
     public string? FiltersJson { get; private set; }
 
     public DateTime CreatedAtUtc { get; private set; }

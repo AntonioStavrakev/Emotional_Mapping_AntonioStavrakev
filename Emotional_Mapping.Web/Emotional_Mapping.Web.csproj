@@ -10,4 +10,9 @@
       <ProjectReference Include="..\Emotional_Mapping.Infrastructure\Emotional_Mapping.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Place\AddPlace.cshtml" />
+      <_ContentIncludedByDefault Remove="Stats\Index.cshtml" />
+    </ItemGroup>
+
 </Project>

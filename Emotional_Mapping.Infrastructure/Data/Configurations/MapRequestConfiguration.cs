@@ -10,7 +10,7 @@ public class MapRequestConfiguration : IEntityTypeConfiguration<MapRequest>
     {
         b.Property(x => x.QueryText).HasMaxLength(700);
         b.Property(x => x.Language).HasMaxLength(10);
-        b.Property(x => x.FiltersJson).HasColumnType("longtext");
+        b.Property(x => x.FiltersJson).HasColumnType("jsonb");
         b.Property(x => x.AiModel).HasMaxLength(80);
 
         b.HasIndex(x => x.CityId);

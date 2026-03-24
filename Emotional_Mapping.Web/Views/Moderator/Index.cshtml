@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Модератор панел";
+}
+
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">&#128737; Модератор панел</h1>
+    <p class="em-page-sub">Преглед и управление на потребителско съдържание</p>
+</div>
+
+<div class="tabs fade-up fade-up-1">
+    <button class="tbtn on" onclick="showTab('pending',this)">Неодобрени точки</button>
+    <button class="tbtn" onclick="showTab('reported',this)">Сигнализирани</button>
+</div>
+
+<div class="tp on" id="tp-pending">
+    <div class="em-alert em-alert-info" style="margin-bottom:1.5rem;">
+        Прегледай новите точки и ги одобри или отхвърли.
+        Одобрените се появяват на общата карта.
+    </div>
+    <div id="pendList">
+        <p style="color:#6b7080">Зареждане...</p>
+    </div>
+</div>
+
+<div class="tp em-card" id="tp-reported">
+    <div class="em-card__title">Сигнализирано съдържание</div>
+    <div style="margin-top:1rem">
+        <div class="em-alert em-alert-ok">Няма активни сигнали.</div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showTab(n, btn) {
+    document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
+    document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
+    document.getElementById('tp-' + n).classList.add('on');
+    btn.classList.add('on');
+    if (n === 'pending') loadPending();
+}
+
+function loadPending() {
+    fetch('/api/points?cityId=00000000-0000-0000-0000-000000000000')
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(pts) {
+            var pend = (pts || []).filter(function(p) { return !p.isApproved; });
+            if (!pend.length) {
+                document.getElementById('pendList').innerHTML =
+                    '<div class="em-alert em-alert-ok">Няма неодобрени точки.</div>';
+                return;
+            }
+            document.getElementById('pendList').innerHTML = pend.map(function(p) {
+                return '<div class="pcard">'
+                    + '<div class="pcard__hdr">'
+                    + '<div>'
+                    + '<strong style="font-size:.9rem">' + esc(p.title || 'Без заглавие') + '</strong>'
+                    + '<span class="em-badge em-badge-joy" style="margin-left:.65rem">'
+                    + esc(p.emotion || '') + '</span>'
+                    + '</div>'
+                    + '<span style="font-size:.75rem;color:#6b7080">'
+                    + (p.createdAtUtc ? new Date(p.createdAtUtc).toLocaleDateString('bg') : '')
+                    + '</span>'
+                    + '</div>'
+                    + '<div class="pcard__body">' + esc(p.note || 'Без описание.') + '</div>'
+                    + '<div style="font-size:.75rem;color:#6b7080;margin-bottom:.75rem">'
+                    + 'Интензитет: ' + (p.intensity || '—')
+                    + ' &bull; Анонимна: ' + (p.isAnonymous ? 'Да' : 'Не')
+                    + '</div>'
+                    + '<div class="pcard__acts">'
+                    + '<button class="btn-em btn-em-success btn-em-sm" onclick="approveP(\''
+                    + p.id + '\')">Одобри</button>'
+                    + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deleteP(\''
+                    + p.id + '\')">Изтрий</button>'
+                    + '</div></div>';
+            }).join('');
+        }).catch(function() {
+            document.getElementById('pendList').innerHTML =
+                '<div class="em-alert em-alert-error">Грешка при зареждане.</div>';
+        });
+}
+
+function approveP(id) {
+    fetch('/api/points/' + id + '/approve', { method: 'POST' })
+        .then(function(r) { if (r.ok) loadPending(); })
+        .catch(function() {});
+}
+
+function deleteP(id) {
+    if (!confirm('Изтриваш тази точка?')) return;
+    fetch('/api/admin/points/' + id, { method: 'DELETE' })
+        .then(function(r) { if (r.ok) loadPending(); })
+        .catch(function() {});
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+loadPending();
+</script>
+}

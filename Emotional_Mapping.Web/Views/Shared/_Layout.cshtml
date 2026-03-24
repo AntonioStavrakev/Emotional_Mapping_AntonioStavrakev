@@ -49,3 +49,90 @@
 @* </body> *@
 @* </html> *@
 
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] — Emotional Map</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+
+<nav class="em-nav">
+    <a class="em-nav__brand" href="/">
+        <span class="dot"></span>Emotional Map
+    </a>
+    <ul class="em-nav__links">
+        <li><a href="/">Начало</a></li>
+        <li><a href="/Map">Карта</a></li>
+        <li><a href="/Map/Generate">Генерирай</a></li>
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+        <li><a href="/Map/MyMaps">Моите карти</a></li>
+        <li><a href="/Map/AddPlace">Добави място</a></li>
+        }
+        <li><a href="/Stats">Статистики</a></li>
+        @if (User.IsInRole("Admin"))
+        {
+        <li><a href="/Admin" style="color:var(--accent);">&#9889; Admin</a></li>
+        }
+        @if (User.IsInRole("Moderator") && !User.IsInRole("Admin"))
+        {
+        <li><a href="/Moderator" style="color:var(--accent2);">&#128737; Мод.</a></li>
+        }
+    </ul>
+    <div class="em-nav__actions">
+        @if (User.Identity != null && User.Identity.IsAuthenticated)
+        {
+        @if (User.IsInRole("SuperUser"))
+        {
+        <span class="em-badge em-badge-super">&#9889; SuperUser</span>
+        }
+        else if (User.IsInRole("Admin"))
+        {
+        <span class="em-badge em-badge-admin">Admin</span>
+        }
+        else if (User.IsInRole("Moderator"))
+        {
+        <span class="em-badge em-badge-mod">&#128737; Мод.</span>
+        }
+        <span class="btn-em btn-em-ghost btn-em-sm" style="cursor:default;">
+                &#128100; @User.Identity.Name
+            </span>
+        <form method="post" action="/Account/Logout" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn-em btn-em-ghost btn-em-sm">Изход</button>
+        </form>
+        }
+        else
+        {
+        <a href="/Account/Login"    class="btn-em btn-em-ghost btn-em-sm">Вход</a>
+        <a href="/Account/Register" class="btn-em btn-em-primary btn-em-sm">Регистрация</a>
+        }
+    </div>
+</nav>
+
+<main class="em-main">
+    @RenderBody()
+</main>
+
+<footer class="em-footer">
+    <span>&copy; 2026 Emotional Map &mdash; Antonio Stavrakev</span>
+    <div style="display:flex;gap:1.5rem;">
+        <a href="/Privacy">&#128274; Поверителност</a>
+        <a href="/Stats">&#128200; Статистики</a>
+    </div>
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

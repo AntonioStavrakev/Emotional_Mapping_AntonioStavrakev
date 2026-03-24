@@ -13,11 +13,13 @@ public class HomeController : Controller
         _logger = logger;
     }
 
+    // GET /
     public IActionResult Index()
     {
         return View();
     }
 
+    // GET /Home/Privacy
     public IActionResult Privacy()
     {
         return View();
@@ -26,6 +28,9 @@ public class HomeController : Controller
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        return View(new ErrorViewModel
+        {
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+        });
     }
 }

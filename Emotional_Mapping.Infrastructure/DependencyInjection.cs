@@ -26,7 +26,7 @@ public static class DependencyInjection
                  ?? throw new InvalidOperationException("Липсва ConnectionStrings:Default");
 
         services.AddDbContext<AppDbContext>(opt =>
-            opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
+            opt.UseNpgsql(cs));
 
         services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddEntityFrameworkStores<AppDbContext>()

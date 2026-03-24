@@ -11,7 +11,7 @@ public class PlaceConfiguration : IEntityTypeConfiguration<Place>
         b.Property(x => x.Name).HasMaxLength(200).IsRequired();
         b.Property(x => x.Description).HasMaxLength(600);
         b.Property(x => x.Address).HasMaxLength(250);
-        b.Property(x => x.TagsJson).HasColumnType("longtext");
+        b.Property(x => x.TagsJson).HasColumnType("text");
         b.Property(x => x.ImageUrl).HasMaxLength(500);
         b.Property(x => x.WebsiteUrl).HasMaxLength(500);
         b.Property(x => x.OpeningHours).HasMaxLength(200);
