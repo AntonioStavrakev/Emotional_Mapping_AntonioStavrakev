@@ -4,7 +4,9 @@ using Emotional_Mapping.Infrastructure.Data;
 using Emotional_Mapping.Infrastructure.Data.Seed;
 using FluentValidation.AspNetCore;
 using Emotional_Mapping.Infrastructure;
+using Emotional_Mapping.Infrastructure.AI;
 using Emotional_Mapping.Infrastructure.Identity;
+using Emotional_Mapping.Infrastructure.OpenAiServices;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 
@@ -16,9 +18,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<GenerateMapRequestDtoValida
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped<OpenAiService>();
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection("Stripe"));
+builder.Services.Configure<OpenAiOptions>(
+    builder.Configuration.GetSection("OpenAI"));
 
 builder.Services.AddEmotionalMappingInfrastructure(builder.Configuration);
 
