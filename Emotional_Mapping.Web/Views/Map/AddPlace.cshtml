@@ -97,8 +97,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 var amap = L.map('addMap').setView([42.15, 24.75], 12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    { attribution: '&copy;CartoDB', maxZoom: 19 }).addTo(amap);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    { attribution: '&copy;OpenStreetMap'}).addTo(amap);
 
 var pin = null;
 

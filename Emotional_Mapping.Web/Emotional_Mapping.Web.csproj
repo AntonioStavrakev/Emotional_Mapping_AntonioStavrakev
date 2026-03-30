@@ -19,4 +19,9 @@
       <Folder Include="wwwroot\images\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="AspNet.Security.OAuth.Apple" Version="9.4.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.14" />
+    </ItemGroup>
+
 </Project>

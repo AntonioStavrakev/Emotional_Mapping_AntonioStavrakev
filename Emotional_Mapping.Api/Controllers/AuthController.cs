@@ -20,6 +20,16 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
+        if (string.IsNullOrWhiteSpace(req.Email))
+            return BadRequest("Имейлът е задължителен.");
+
+        if (string.IsNullOrWhiteSpace(req.Password))
+            return BadRequest("Паролата е задължителна.");
+
+        var existing = await _users.FindByEmailAsync(req.Email);
+        if (existing != null)
+            return BadRequest("Вече има профил с този имейл.");
+
         var user = new ApplicationUser
         {
             UserName = req.Email,
@@ -30,26 +40,44 @@ public class AuthController : ControllerBase
 
         var result = await _users.CreateAsync(user, req.Password);
         if (!result.Succeeded)
-            return BadRequest(result.Errors);
+        {
+            var errors = result.Errors.Select(x => x.Description).ToList();
+            return BadRequest(errors);
+        }
 
         await _users.AddToRoleAsync(user, "User");
-        return Ok(new { message = "Регистрация успешна." });
+
+        return Ok(new
+        {
+            message = "Регистрация успешна."
+        });
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
-        var result = await _signIn.PasswordSignInAsync(req.Email, req.Password, isPersistent: true, lockoutOnFailure: false);
-        if (!result.Succeeded)
-            return Unauthorized(new { message = "Невалиден имейл или парола." });
+        var user = await _users.FindByEmailAsync(req.Email);
+        if (user == null)
+            return Unauthorized("Невалиден имейл или парола.");
 
-        return Ok(new { message = "Успешен вход." });
+        var result = await _signIn.CheckPasswordSignInAsync(user, req.Password, lockoutOnFailure: false);
+        if (!result.Succeeded)
+            return Unauthorized("Невалиден имейл или парола.");
+
+        var roles = await _users.GetRolesAsync(user);
+
+        return Ok(new
+        {
+            message = "Успешен вход.",
+            email = user.Email,
+            displayName = user.DisplayName,
+            roles = roles
+        });
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public IActionResult Logout()
     {
-        await _signIn.SignOutAsync();
         return Ok(new { message = "Изход успешен." });
     }
 

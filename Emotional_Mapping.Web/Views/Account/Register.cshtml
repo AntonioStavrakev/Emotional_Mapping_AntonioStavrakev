@@ -18,6 +18,11 @@
             @Html.AntiForgeryToken()
 
             <div class="em-form-group">
+                <label asp-for="DisplayName" class="em-label">Показвано име</label>
+                <input asp-for="DisplayName" class="em-input" placeholder="Например: Antonio" />
+                <span asp-validation-for="DisplayName" class="text-danger small"></span>
+            </div>
+            <div class="em-form-group">
                 <label asp-for="Email" class="em-label">Имейл</label>
                 <input asp-for="Email" class="em-input" placeholder="name@example.com" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
@@ -38,6 +43,19 @@
             <button type="submit" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
                 Регистрация
             </button>
+            @if (TempData["Error"] != null)
+            {
+                <div class="em-alert em-alert-error">@TempData["Error"]</div>
+            }
+
+            <div style="margin-top:18px; display:grid; gap:10px;">
+                <a href="/Account/GoogleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
+                    Регистрация / вход с Google
+                </a>
+                <a href="/Account/AppleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
+                    Регистрация / вход с Apple
+                </a>
+            </div>
         </form>
 
         <div class="auth-footer">

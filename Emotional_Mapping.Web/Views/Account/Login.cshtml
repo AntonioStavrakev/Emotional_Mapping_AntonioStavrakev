@@ -32,6 +32,19 @@
             <button type="submit" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
                 Вход
             </button>
+            @if (TempData["Error"] != null)
+            {
+                <div class="em-alert em-alert-error">@TempData["Error"]</div>
+            }
+
+            <div style="margin-top:18px; display:grid; gap:10px;">
+                <a href="/Account/GoogleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
+                    Вход с Google
+                </a>
+                <a href="/Account/AppleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
+                    Вход с Apple
+                </a>
+            </div>
         </form>
 
         <div class="auth-footer">

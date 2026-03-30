@@ -131,7 +131,7 @@ document.getElementById('citySelect').addEventListener('change', async function 
     const o = this.options[this.selectedIndex];
 
     if (o.dataset.lat && o.dataset.lng) {
-        pmap.setView([+o.dataset.lat, +o.dataset.lng], 12, { animate: true });
+        pmap.setView([+o.dataset.lat, +o.dataset.lng], 13, { animate: true });
     }
 
     const districtSelect = document.getElementById('districtSel');
