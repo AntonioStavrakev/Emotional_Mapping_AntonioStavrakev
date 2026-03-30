@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Emotional_Mapping.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260324103956_InitialCreateSupabase")]
+    [Migration("20260327065138_InitialCreateSupabase")]
     partial class InitialCreateSupabase
     {
         /// <inheritdoc />

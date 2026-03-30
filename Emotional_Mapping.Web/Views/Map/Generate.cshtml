@@ -1,19 +1,59 @@
-@{
-    ViewData["Title"] = "Генерирай карта";
+@using Emotional_Mapping.Domain.Enums
+
+@functions {
+    string EmotionLabel(EmotionType e) => e switch
+    {
+        EmotionType.Calm => "Спокойствие",
+        EmotionType.Joy => "Радост",
+        EmotionType.Nostalgia => "Носталгия",
+        EmotionType.Tension => "Напрежение",
+        EmotionType.Inspiration => "Вдъхновение",
+        EmotionType.Energetic => "Енергично",
+        EmotionType.Romantic => "Романтика",
+        EmotionType.Social => "Социално",
+        EmotionType.Relaxed => "Релакс",
+        EmotionType.Safe => "Сигурност",
+        EmotionType.Excited => "Еуфория",
+        _ => e.ToString()
+    };
+
+    string EmotionIcon(EmotionType e) => e switch
+    {
+        EmotionType.Calm => "😌",
+        EmotionType.Joy => "😊",
+        EmotionType.Nostalgia => "🕰️",
+        EmotionType.Tension => "😣",
+        EmotionType.Inspiration => "✨",
+        EmotionType.Energetic => "⚡",
+        EmotionType.Romantic => "💗",
+        EmotionType.Social => "👥",
+        EmotionType.Relaxed => "🌿",
+        EmotionType.Safe => "🛡️",
+        EmotionType.Excited => "🎉",
+        _ => "•"
+    };
 }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+@{
+    ViewData["Title"] = "Генерирай карта";
+    var allEmotions = Enum.GetValues<EmotionType>().ToList();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 
 <div class="em-page-header fade-up">
     <h1 class="em-page-title">Генерирай карта</h1>
-    <p class="em-page-sub">Въведи настроение и AI ще генерира персонална емоционална карта</p>
+    <p class="em-page-sub">Избери град, настроение и тип места. GEOFEEL ще генерира карта чрез AI.</p>
 </div>
 
 <div id="alertBox"></div>
 
 <div class="gen-grid fade-up fade-up-1">
     <div class="gen-form">
-        <h2 class="gen-form__title">Параметри на заявката</h2>
+        <h2 class="gen-form__title">Параметри</h2>
+
         <form id="genForm">
             <div class="em-form-group">
                 <label class="em-label">Град</label>
@@ -21,78 +61,44 @@
                     <option value="">— Избери град —</option>
                 </select>
             </div>
+
             <div class="em-form-group">
-                <label class="em-label">Район (по избор)</label>
+                <label class="em-label">Район</label>
                 <select class="em-select" id="districtSel">
                     <option value="">Всички райони</option>
                 </select>
             </div>
+
             <div class="em-form-group">
-                <label class="em-label">Тип места</label>
-                <select class="em-select" id="placeType">
-                    <option value="">Всички</option>
-                    <option value="Park">Паркове</option>
-                    <option value="Restaurant">Ресторанти</option>
-                    <option value="Museum">Музеи</option>
-                    <option value="Street">Улици</option>
-                    <option value="Beach">Плажове</option>
-                    <option value="Cafe">Кафенета</option>
-                </select>
-            </div>
-            <div class="em-form-group">
-                <label class="em-label">Избери настроение</label>
-                <div class="em-grid3">
-                    <label class="echip">
-                        <input type="checkbox" value="Joy"/>
-                        <span class="icon">&#128516;</span>Радост
-                    </label>
-                    <label class="echip">
-                        <input type="checkbox" value="Calm"/>
-                        <span class="icon">&#128524;</span>Спокойствие
-                    </label>
-                    <label class="echip">
-                        <input type="checkbox" value="Sadness"/>
-                        <span class="icon">&#128546;</span>Носталгия
-                    </label>
-                    <label class="echip">
-                        <input type="checkbox" value="Anger"/>
-                        <span class="icon">&#128545;</span>Напрежение
-                    </label>
-                    <label class="echip">
-                        <input type="checkbox" value="Fear"/>
-                        <span class="icon">&#128552;</span>Страх
-                    </label>
-                    <label class="echip">
-                        <input type="checkbox" value="Romantic"/>
-                        <span class="icon">&#128149;</span>Романтика
-                    </label>
+                <label class="em-label">Настроение</label>
+                <div class="emotion-chip-grid">
+                    @foreach (var emotion in allEmotions)
+                    {
+                        <label class="echip">
+                            <input type="radio" name="emotion" value="@((int)emotion)" />
+                            <span class="icon">@EmotionIcon(emotion)</span>
+                            @EmotionLabel(emotion)
+                        </label>
+                    }
                 </div>
             </div>
-            <div class="em-form-group">
-                <label class="em-label">Интензитет (1–5)</label>
-                <div class="int-row">
-                    <input type="range" min="1" max="5" value="3" id="intSlider"/>
-                    <span class="int-val" id="intVal">3</span>
-                </div>
-            </div>
+
             <div class="em-form-group">
                 <label class="em-label">Опиши настроението си</label>
-                <textarea class="em-textarea" id="userNote" rows="3"
-                    placeholder="Напр. Искам спокойни места за разходка..."></textarea>
+                <textarea class="em-textarea" id="userNote" rows="4" placeholder="Например: искам тихи, спокойни места за разходка и вдъхновение..."></textarea>
             </div>
-            <button type="submit" class="btn-em btn-em-primary"
-                    style="width:100%;justify-content:center;padding:.82rem;font-size:.95rem;">
-                &#129302; Генерирай с AI
+
+            <button type="submit" class="btn-em btn-em-primary btn-em-lg" style="width:100%;justify-content:center;">
+                Генерирай с AI
             </button>
         </form>
     </div>
 
-    <div class="gen-preview">
-        <div id="prevMap" style="width:100%;height:460px;"></div>
+    <div class="gen-preview map-soft">
+        <div id="prevMap" style="width:100%;height:560px;"></div>
         <div class="spin-ov" id="spinOver">
             <div class="spinner"></div>
-            <p style="color:#6b7080;font-size:.875rem;">AI анализира данните...</p>
-            <p style="color:#6b7080;font-size:.78rem;">Може да отнеме до 15 секунди</p>
+            <p>AI анализира настроението ти...</p>
         </div>
     </div>
 </div>
@@ -100,83 +106,113 @@
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var pmap = L.map('prevMap').setView([42.15, 24.75], 12);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    { attribution: '&copy;CartoDB', maxZoom: 19 }).addTo(pmap);
+const pmap = L.map('prevMap').setView([42.6977, 23.3219], 7);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 19
+}).addTo(pmap);
 
 fetch('/api/cities')
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(cs) {
-        var s = document.getElementById('citySelect');
-        (cs || []).forEach(function(c) {
-            var o = document.createElement('option');
-            o.value = c.id; o.textContent = c.name;
-            o.dataset.lat = c.latitude; o.dataset.lng = c.longitude;
+    .then(r => r.ok ? r.json() : [])
+    .then(cs => {
+        const s = document.getElementById('citySelect');
+        (cs || []).forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name;
+            o.dataset.lat = c.center?.lat ?? c.latitude ?? c.lat ?? '';
+            o.dataset.lng = c.center?.lng ?? c.longitude ?? c.lng ?? '';
             s.appendChild(o);
         });
-    }).catch(function() {});
+    });
 
-document.getElementById('citySelect').addEventListener('change', function() {
-    var o = this.options[this.selectedIndex];
-    if (o.dataset.lat) pmap.setView([+o.dataset.lat, +o.dataset.lng], 13);
+document.getElementById('citySelect').addEventListener('change', async function () {
+    const o = this.options[this.selectedIndex];
+
+    if (o.dataset.lat && o.dataset.lng) {
+        pmap.setView([+o.dataset.lat, +o.dataset.lng], 12, { animate: true });
+    }
+
+    const districtSelect = document.getElementById('districtSel');
+    districtSelect.innerHTML = '<option value="">Всички райони</option>';
+
+    if (!this.value) return;
+
+    try {
+        const r = await fetch('/api/districts/by-city/' + this.value);
+        const districts = await r.json();
+
+        (districts || []).forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            districtSelect.appendChild(opt);
+        });
+    } catch {}
 });
 
-document.getElementById('intSlider').addEventListener('input', function() {
-    document.getElementById('intVal').textContent = this.value;
+document.querySelectorAll('.echip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.echip').forEach(x => x.classList.remove('on'));
+        chip.classList.add('on');
+        chip.querySelector('input').checked = true;
+    });
 });
 
-document.querySelectorAll('.echip').forEach(function(c) {
-    c.addEventListener('click', function() { this.classList.toggle('on'); });
-});
-
-document.getElementById('genForm').addEventListener('submit', async function(e) {
+document.getElementById('genForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    var spin = document.getElementById('spinOver');
+
+    const spin = document.getElementById('spinOver');
     spin.classList.add('on');
     document.getElementById('alertBox').innerHTML = '';
 
-    var emotions = Array.from(document.querySelectorAll('.echip.on input'))
-                        .map(function(x) { return x.value; });
-    var body = {
-        cityId:            document.getElementById('citySelect').value,
-        districtId:        document.getElementById('districtSel').value || null,
-        selectedPlaceType: document.getElementById('placeType').value || null,
-        emotions:          emotions,
-        intensity:         parseInt(document.getElementById('intSlider').value),
-        userNote:          document.getElementById('userNote').value || null
+    const selectedEmotion = document.querySelector('input[name="emotion"]:checked');
+
+    const body = {
+        cityId: document.getElementById('citySelect').value,
+        districtId: document.getElementById('districtSel').value || null,
+        selectedEmotion: selectedEmotion ? parseInt(selectedEmotion.value) : null,
+        queryText: document.getElementById('userNote').value || null,
+        radiusMeters: 3000
     };
 
     if (!body.cityId) {
         spin.classList.remove('on');
-        showAlert('error', 'Моля избери град.');
+        showAlert('error', 'Моля, избери град.');
         return;
     }
 
     try {
-        var r = await fetch('/api/maps/generate', {
+        const r = await fetch('/api/maps/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
+
         spin.classList.remove('on');
+
         if (r.ok) {
-            var d = await r.json();
+            const d = await r.json();
             window.location.href = '/Map/Result?mapId=' + d.id;
         } else if (r.status === 401) {
-            showAlert('error', 'Трябва да влезеш. <a href="/Account/Login" style="color:#7c6ff7">Вход</a>');
+            showAlert('error', 'Трябва да влезеш в профила си.');
         } else {
-            var err = await r.json().catch(function() { return {}; });
+            const err = await r.json().catch(() => ({}));
             showAlert('error', err.message || 'Грешка при генерирането.');
         }
-    } catch (ex) {
+    } catch {
         spin.classList.remove('on');
         showAlert('error', 'Мрежова грешка.');
     }
 });
 
-function showAlert(t, m) {
+function showAlert(type, message) {
+    const cls = type === 'ok' ? 'em-alert-ok' :
+                type === 'warn' ? 'em-alert-warn' : 'em-alert-error';
+
     document.getElementById('alertBox').innerHTML =
-        '<div class="em-alert em-alert-' + t + '">' + m + '</div>';
+        `<div class="em-alert ${cls}">${message}</div>`;
 }
 </script>
 }

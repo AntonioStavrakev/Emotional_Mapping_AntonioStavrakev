@@ -1,51 +1,45 @@
 @model Emotional_Mapping.Web.Models.LoginViewModel
+
 @{
     ViewData["Title"] = "Вход";
 }
 
 <div class="auth-wrap fade-up">
     <div class="auth-card">
-        <h1 class="auth-title">Добре дошъл</h1>
-        <p class="auth-sub">Влез в профила си, за да продължиш.</p>
+        <h1 class="auth-title">Вход в GEOFEEL</h1>
+        <p class="auth-sub">Влез в профила си, за да генерираш карти, да пазиш история и да използваш premium функции.</p>
 
-        @if (!string.IsNullOrEmpty(ViewBag.Error as string))
+        @if (ViewBag.Error != null)
         {
             <div class="em-alert em-alert-error">@ViewBag.Error</div>
         }
-        @if (!string.IsNullOrEmpty(ViewBag.Success as string))
-        {
-            <div class="em-alert em-alert-ok">@ViewBag.Success</div>
-        }
 
-        <form asp-controller="Account" asp-action="Login" method="post">
+        <form method="post">
             @Html.AntiForgeryToken()
+
             <div class="em-form-group">
-                <label class="em-label" asp-for="Email">Имейл</label>
-                <input class="em-input" asp-for="Email" type="email"
-                       placeholder="you@example.com" autocomplete="email" required/>
-                <span asp-validation-for="Email"
-                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+                <label asp-for="Email" class="em-label">Имейл</label>
+                <input asp-for="Email" class="em-input" placeholder="name@example.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
+
             <div class="em-form-group">
-                <label class="em-label" asp-for="Password">Парола</label>
-                <input class="em-input" asp-for="Password" type="password"
-                       placeholder="••••••••" required/>
-                <span asp-validation-for="Password"
-                      style="color:#e85555;font-size:.78rem;display:block;margin-top:.3rem;"></span>
+                <label asp-for="Password" class="em-label">Парола</label>
+                <input asp-for="Password" type="password" class="em-input" placeholder="••••••••" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
-            <button type="submit" class="btn-em btn-em-primary"
-                    style="width:100%;justify-content:center;padding:.75rem;">
-                Влез в профила
+
+            <button type="submit" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
+                Вход
             </button>
         </form>
 
         <div class="auth-footer">
-            Нямаш профил?
-            <a href="/Account/Register">Регистрирай се</a>
+            Нямаш профил? <a href="/Account/Register">Регистрация</a>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <partial name="_ValidationScriptsPartial" />
 }

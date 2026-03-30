@@ -1,241 +1,59 @@
 @{
-    ViewData["Title"] = "Резултат";
-    var mapId = Context.Request.Query["mapId"].ToString();
+ViewData["Title"] = "Моите карти";
 }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-<div id="loadScr" style="text-align:center;padding:4rem 0;">
-    <p class="lp" style="font-size:1rem;">&#9203; Зареждане на картата...</p>
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">Моите карти</h1>
+    <p class="em-page-sub">История на генерираните от теб емоционални карти.</p>
 </div>
 
-<div id="mapWrap" style="display:none;">
-    <div class="em-page-header fade-up">
-        <h1 class="em-page-title" id="mapTitle">—</h1>
-        <p class="em-page-sub" id="mapDate"></p>
-    </div>
-
-    <div id="gAlert"></div>
-
-    <div class="acts fade-up fade-up-1">
-        <button id="btnAdd"     class="btn-em btn-em-ghost">&#128205; Добави точка</button>
-        <button id="btnRoute"   class="btn-em btn-em-success">&#128739; AI маршрут</button>
-        <button id="btnPublish" class="btn-em btn-em-warning">&#128279; Публикувай</button>
-        <button id="btnVote"    class="vote-btn">&#11088; Точно ми пасва</button>
-        <a href="/Map/MyMaps"   class="btn-em btn-em-ghost">&#8592; Моите карти</a>
-    </div>
-
-    <div id="shareBox" style="display:none;margin-bottom:1rem;" class="em-alert em-alert-ok">
-        &#128279; <strong>Публичен линк:</strong>
-        <input type="text" id="shareInp" readonly onclick="this.select()"
-               style="background:transparent;border:none;color:#5bc8c2;font-size:.85rem;
-                      width:260px;outline:none;margin:0 .5rem;"/>
-        <button class="btn-em btn-em-ghost btn-em-sm" onclick="cpShare()">Копирай</button>
-    </div>
-
-    <div class="res-grid fade-up fade-up-2">
-        <div>
-            <div class="frow">
-                <label class="fchip on"><input type="checkbox" class="ef" value="Joy"      checked/> &#128516; Радост</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Calm"     checked/> &#128524; Спокойно</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Sadness"  checked/> &#128546; Тъга</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Anger"    checked/> &#128545; Гняв</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Fear"     checked/> &#128552; Страх</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Romantic" checked/> &#128149; Романтика</label>
-            </div>
-            <div id="map" style="height:520px;border-radius:14px;border:1px solid rgba(255,255,255,.07);"></div>
-        </div>
-
-        <div class="sidebar">
-            <div class="ai-card">
-                <div class="ai-card__lbl">Доминираща емоция</div>
-                <div class="ai-card__val" id="sEmo">—</div>
-                <div style="margin-top:.75rem;">
-                    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#6b7080;margin-bottom:.3rem;">
-                        <span>Доверие на AI</span><span id="sConf">—</span>
-                    </div>
-                    <div class="conf-bar">
-                        <div class="conf-bar__fill" id="sConfBar" style="width:0%"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="ai-card">
-                <div class="ai-card__lbl">AI Обобщение</div>
-                <p id="sSumm" style="font-size:.85rem;color:#6b7080;margin-top:.5rem;line-height:1.65;">—</p>
-            </div>
-            <div class="ai-card">
-                <div class="ai-card__lbl" style="margin-bottom:.75rem;">&#128205; Препоръчани места</div>
-                <div class="rec-list" id="recList">
-                    <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<div id="mapsGrid" class="maps-grid fade-up fade-up-1"></div>
 
 @section Scripts {
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var MID     = '@mapId';
-var lmap, ml, rl;
-var recs    = [];
-var addMode = false, voted = false;
-var ec = { Joy:'#f6c948', Calm:'#5bc8c2', Sadness:'#6382c8', Anger:'#e85555', Fear:'#9c6ee8', Romantic:'#e87090' };
+    const grid = document.getElementById('mapsGrid');
 
-function mkIcon(em) {
-    var c = ec[em] || '#7c6ff7';
-    return L.divIcon({
-        className: '',
-        html: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">'
-            + '<circle cx="14" cy="14" r="13" fill="' + c + '" fill-opacity=".2" stroke="' + c + '" stroke-width="2"/>'
-            + '<circle cx="14" cy="14" r="6" fill="' + c + '"/></svg>',
-        iconSize: [28, 36], iconAnchor: [14, 34], popupAnchor: [0, -34]
-    });
-}
+    fetch('/api/maps/mine')
+        .then(async r => {
+            if (r.status === 401) {
+                grid.innerHTML = '<div class="empty"><div class="empty__icon">🔒</div><div class="empty__title">Влез в профила си</div></div>';
+                return [];
+            }
+            return r.ok ? await r.json() : [];
+        })
+        .then(items => {
+            if (!items.length) {
+                grid.innerHTML = `
+                <div class="empty">
+                    <div class="empty__icon">🗺️</div>
+                    <div class="empty__title">Още нямаш запазени карти</div>
+                    <a href="/Map/Generate" class="btn-em btn-em-primary">Генерирай първата си карта</a>
+                </div>`;
+                return;
+            }
 
-function refresh() {
-    if (!ml) return;
-    ml.clearLayers();
-    var sel = Array.from(document.querySelectorAll('.ef:checked')).map(function(x) { return x.value; });
-    recs.filter(function(r) { return !r.emotion || sel.includes(r.emotion); }).forEach(function(r) {
-        var lat = r.lat || r.latitude;
-        var lng = r.lng || r.longitude;
-        if (!lat) return;
-        L.marker([lat, lng], { icon: mkIcon(r.emotion) })
-         .bindPopup('<strong style="color:#e8eaf0">' + esc(r.placeName || r.name || '') + '</strong>'
-             + '<div style="font-size:.78rem;color:#aaa">' + esc(r.emotion || '') + '</div>'
-             + '<div style="font-size:.78rem;color:#888">' + esc(r.reason || '') + '</div>')
-         .addTo(ml);
-    });
-}
+            grid.innerHTML = items.map(m => `
+            <a class="mcard" href="/Map/Result?mapId=${m.id}">
+                <div class="mcard__hdr">
+                    <div class="mcard__title">${m.title ?? 'Карта'}</div>
+                    <span class="em-badge em-badge-super">${m.dominantEmotion ?? '—'}</span>
+                </div>
+                <div class="mcard__summ">${m.summary ?? 'Няма описание.'}</div>
+                <div>
+                    <small class="text-muted">Confidence</small>
+                    <div class="cbar"><div class="cbar__fill" style="width:${Math.round((m.confidence ?? 0) * 100)}%"></div></div>
+                </div>
+                <div class="mcard__foot">
+                    <small>${formatDate(m.generatedAtUtc)}</small>
+                    <span class="btn-em btn-em-ghost btn-em-sm">Отвори</span>
+                </div>
+            </a>
+        `).join('');
+        });
 
-function boot(data) {
-    document.getElementById('loadScr').style.display = 'none';
-    document.getElementById('mapWrap').style.display  = 'block';
-    document.getElementById('mapTitle').textContent   = data.title || 'Emotional Map';
-    document.getElementById('mapDate').textContent    = data.generatedAtUtc
-        ? 'Генерирано: ' + new Date(data.generatedAtUtc).toLocaleString('bg') : '';
-    document.getElementById('sEmo').textContent  = data.dominantEmotion || '—';
-    document.getElementById('sSumm').textContent = data.summary || 'Няма обобщение.';
-
-    var conf = Math.round((data.confidence || 0) * 100);
-    document.getElementById('sConf').textContent = conf + '%';
-    setTimeout(function() { document.getElementById('sConfBar').style.width = conf + '%'; }, 200);
-
-    recs = data.recommendations || [];
-    document.getElementById('recList').innerHTML = recs.length
-        ? recs.map(function(r) {
-            var lat = r.lat || r.latitude;
-            var lng = r.lng || r.longitude;
-            return '<div class="rec-item" onclick="fly(' + lat + ',' + lng + ')">'
-                + '<div class="rec-item__name">' + esc(r.placeName || r.name || 'Без название') + '</div>'
-                + '<div class="rec-item__reason">' + esc(r.reason || '') + '</div></div>';
-          }).join('')
-        : '<p style="color:#6b7080;font-size:.85rem;">Няма препоръки.</p>';
-
-    var center = recs[0]
-        ? [recs[0].lat || recs[0].latitude, recs[0].lng || recs[0].longitude]
-        : [42.15, 24.75];
-    lmap = L.map('map').setView(center, 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        { attribution: '&copy;CartoDB', maxZoom: 19 }).addTo(lmap);
-    ml = L.layerGroup().addTo(lmap);
-    refresh();
-    lmap.on('click', onMapClick);
-}
-
-fetch('/api/me/maps')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-    .then(function(ms) {
-        var m = ms.find(function(x) { return x.id === MID; });
-        if (m) boot(m); else throw 0;
-    }).catch(function() {
-        fetch('/api/maps/public/' + MID)
-            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-            .then(function(m) { boot(m); })
-            .catch(function() {
-                showG('error', 'Картата не е намерена. <a href="/Account/Login" style="color:#7c6ff7">Влез</a>.');
-            });
-    });
-
-document.querySelectorAll('.ef').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-        this.closest('.fchip').classList.toggle('on', this.checked);
-        refresh();
-    });
-});
-
-function fly(lat, lng) { if (lmap) lmap.flyTo([lat, lng], 16, { duration: 1.2 }); }
-
-document.getElementById('btnAdd').addEventListener('click', function() {
-    addMode = !addMode;
-    this.textContent = addMode ? 'Изключи добавяне' : '&#128205; Добави точка';
-    this.classList.toggle('btn-em-primary', addMode);
-    if (lmap) lmap.getContainer().style.cursor = addMode ? 'crosshair' : '';
-});
-
-function onMapClick(e) {
-    if (!addMode) return;
-    var em   = prompt('Емоция (Joy, Calm, Sadness, Anger, Fear, Romantic):');
-    if (!em) return;
-    var note = prompt('Кратко описание:') || '';
-    fetch('/api/points', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, emotion: em, intensity: 3, note: note })
-    }).then(function(r) {
-        showG(r.ok ? 'ok' : 'error', r.ok ? 'Точката е добавена!' : 'Влез в профила си.');
-    });
-}
-
-document.getElementById('btnRoute').addEventListener('click', function() {
-    var coords = recs.filter(function(r) { return r.lat || r.latitude; })
-                     .slice(0, 5)
-                     .map(function(r) { return [r.lat || r.latitude, r.lng || r.longitude]; });
-    if (coords.length < 2) { showG('warn', 'Няма достатъчно точки.'); return; }
-    if (rl) lmap.removeLayer(rl);
-    rl = L.polyline(coords, { color: '#5bc8c2', weight: 3, dashArray: '6 4' }).addTo(lmap);
-    lmap.fitBounds(rl.getBounds(), { padding: [40, 40] });
-});
-
-document.getElementById('btnPublish').addEventListener('click', function() {
-    fetch('/api/maps/' + MID + '/publish', { method: 'POST' })
-        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function(d) {
-            var url = window.location.origin + (d.publicUrl || '');
-            document.getElementById('shareInp').value = url;
-            document.getElementById('shareBox').style.display = 'block';
-            showG('ok', 'Картата е публикувана!');
-        }).catch(function() { showG('error', 'Влез в профила си.'); });
-});
-
-document.getElementById('btnVote').addEventListener('click', function() {
-    if (voted) return;
-    voted = true;
-    this.classList.add('voted');
-    this.textContent = 'Оценено!';
-    fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mapId: MID, reaction: 'Upvote' })
-    }).catch(function() {});
-    showG('ok', 'Оценката подобрява AI!');
-});
-
-function cpShare() {
-    document.getElementById('shareInp').select();
-    navigator.clipboard.writeText(document.getElementById('shareInp').value);
-    showG('ok', 'Копирано!');
-}
-
-function showG(t, m) {
-    document.getElementById('gAlert').innerHTML =
-        '<div class="em-alert em-alert-' + t + '" style="margin-bottom:1rem">' + m + '</div>';
-    setTimeout(function() { document.getElementById('gAlert').innerHTML = ''; }, 5000);
-}
-
-function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+    function formatDate(v) {
+        if (!v) return '';
+        return new Date(v).toLocaleString('bg-BG');
+    }
 </script>
 }

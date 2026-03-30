@@ -1,241 +1,190 @@
 @{
     ViewData["Title"] = "Резултат";
-    var mapId = Context.Request.Query["mapId"].ToString();
 }
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+@section Styles {
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 
-<div id="loadScr" style="text-align:center;padding:4rem 0;">
-    <p class="lp" style="font-size:1rem;">&#9203; Зареждане на картата...</p>
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">Резултат от AI карта</h1>
+    <p class="em-page-sub">Детайли, препоръки, confidence score и публичен линк.</p>
 </div>
 
-<div id="mapWrap" style="display:none;">
-    <div class="em-page-header fade-up">
-        <h1 class="em-page-title" id="mapTitle">—</h1>
-        <p class="em-page-sub" id="mapDate"></p>
+<div id="alertBox"></div>
+
+<div class="res-grid fade-up fade-up-1">
+    <div class="gen-preview" style="min-height:620px;">
+        <div id="resultMap" style="width:100%;height:620px;"></div>
     </div>
 
-    <div id="gAlert"></div>
+    <aside class="sidebar">
+        <div class="ai-card">
+            <div class="ai-card__lbl">Заглавие</div>
+            <div class="ai-card__val" id="mapTitle">—</div>
 
-    <div class="acts fade-up fade-up-1">
-        <button id="btnAdd"     class="btn-em btn-em-ghost">&#128205; Добави точка</button>
-        <button id="btnRoute"   class="btn-em btn-em-success">&#128739; AI маршрут</button>
-        <button id="btnPublish" class="btn-em btn-em-warning">&#128279; Публикувай</button>
-        <button id="btnVote"    class="vote-btn">&#11088; Точно ми пасва</button>
-        <a href="/Map/MyMaps"   class="btn-em btn-em-ghost">&#8592; Моите карти</a>
-    </div>
-
-    <div id="shareBox" style="display:none;margin-bottom:1rem;" class="em-alert em-alert-ok">
-        &#128279; <strong>Публичен линк:</strong>
-        <input type="text" id="shareInp" readonly onclick="this.select()"
-               style="background:transparent;border:none;color:#5bc8c2;font-size:.85rem;
-                      width:260px;outline:none;margin:0 .5rem;"/>
-        <button class="btn-em btn-em-ghost btn-em-sm" onclick="cpShare()">Копирай</button>
-    </div>
-
-    <div class="res-grid fade-up fade-up-2">
-        <div>
-            <div class="frow">
-                <label class="fchip on"><input type="checkbox" class="ef" value="Joy"      checked/> &#128516; Радост</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Calm"     checked/> &#128524; Спокойно</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Sadness"  checked/> &#128546; Тъга</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Anger"    checked/> &#128545; Гняв</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Fear"     checked/> &#128552; Страх</label>
-                <label class="fchip on"><input type="checkbox" class="ef" value="Romantic" checked/> &#128149; Романтика</label>
-            </div>
-            <div id="map" style="height:520px;border-radius:14px;border:1px solid rgba(255,255,255,.07);"></div>
-        </div>
-
-        <div class="sidebar">
-            <div class="ai-card">
+            <div style="margin-top:16px;">
                 <div class="ai-card__lbl">Доминираща емоция</div>
-                <div class="ai-card__val" id="sEmo">—</div>
-                <div style="margin-top:.75rem;">
-                    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#6b7080;margin-bottom:.3rem;">
-                        <span>Доверие на AI</span><span id="sConf">—</span>
-                    </div>
-                    <div class="conf-bar">
-                        <div class="conf-bar__fill" id="sConfBar" style="width:0%"></div>
-                    </div>
-                </div>
+                <div id="mapEmotion" class="ai-card__val" style="font-size:1.2rem;">—</div>
             </div>
-            <div class="ai-card">
-                <div class="ai-card__lbl">AI Обобщение</div>
-                <p id="sSumm" style="font-size:.85rem;color:#6b7080;margin-top:.5rem;line-height:1.65;">—</p>
+
+            <div style="margin-top:16px;">
+                <div class="ai-card__lbl">Confidence</div>
+                <div id="mapConfidence" class="ai-card__val" style="font-size:1.2rem;">0%</div>
+                <div class="conf-bar"><div id="confFill" class="conf-bar__fill" style="width:0%"></div></div>
             </div>
-            <div class="ai-card">
-                <div class="ai-card__lbl" style="margin-bottom:.75rem;">&#128205; Препоръчани места</div>
-                <div class="rec-list" id="recList">
-                    <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
-                </div>
+
+            <div style="margin-top:16px;">
+                <div class="ai-card__lbl">Summary</div>
+                <div id="mapSummary" style="color:var(--muted);font-size:.92rem;">—</div>
             </div>
         </div>
-    </div>
+
+        <div class="ai-card">
+            <div class="ai-card__lbl">Действия</div>
+            <div class="acts">
+                <button id="publicBtn" class="btn-em btn-em-primary btn-em-sm">Направи публична</button>
+                <button id="copyBtn" class="btn-em btn-em-ghost btn-em-sm">Копирай линк</button>
+            </div>
+            <div id="publicLinkBox" style="font-size:.83rem;color:var(--muted);word-break:break-all;"></div>
+        </div>
+
+        <div class="ai-card">
+            <div class="ai-card__lbl">Препоръки</div>
+            <div id="recommendationsBox" class="rec-list"></div>
+        </div>
+
+        <div class="ai-card">
+            <div class="ai-card__lbl">Обратна връзка</div>
+            <div class="acts">
+                <button class="vote-btn" onclick="vote(true)">👍 Точно ми пасва</button>
+                <button class="vote-btn" onclick="vote(false)">👎 Не пасва</button>
+            </div>
+        </div>
+    </aside>
 </div>
 
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-var MID     = '@mapId';
-var lmap, ml, rl;
-var recs    = [];
-var addMode = false, voted = false;
-var ec = { Joy:'#f6c948', Calm:'#5bc8c2', Sadness:'#6382c8', Anger:'#e85555', Fear:'#9c6ee8', Romantic:'#e87090' };
+const params = new URLSearchParams(window.location.search);
+const mapId = params.get('mapId');
 
-function mkIcon(em) {
-    var c = ec[em] || '#7c6ff7';
-    return L.divIcon({
-        className: '',
-        html: '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">'
-            + '<circle cx="14" cy="14" r="13" fill="' + c + '" fill-opacity=".2" stroke="' + c + '" stroke-width="2"/>'
-            + '<circle cx="14" cy="14" r="6" fill="' + c + '"/></svg>',
-        iconSize: [28, 36], iconAnchor: [14, 34], popupAnchor: [0, -34]
+const resultMap = L.map('resultMap').setView([42.6977, 23.3219], 7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 19
+}).addTo(resultMap);
+
+let loadedMap = null;
+let loadedPublicLink = '';
+
+if (mapId) loadResult(mapId);
+
+async function loadResult(id) {
+    const r = await fetch('/api/maps/' + id);
+    if (!r.ok) {
+        showAlert('error', 'Картата не беше намерена.');
+        return;
+    }
+
+    const d = await r.json();
+    loadedMap = d;
+
+    document.getElementById('mapTitle').textContent = d.title ?? 'Карта';
+    document.getElementById('mapEmotion').textContent = d.dominantEmotion ?? '—';
+    document.getElementById('mapSummary').textContent = d.summary ?? 'Няма описание.';
+    document.getElementById('mapConfidence').textContent = Math.round((d.confidence ?? 0) * 100) + '%';
+    document.getElementById('confFill').style.width = Math.round((d.confidence ?? 0) * 100) + '%';
+
+    const recs = d.recommendations ?? [];
+    const box = document.getElementById('recommendationsBox');
+
+    if (!recs.length) {
+        box.innerHTML = '<div class="rec-item">Няма препоръки.</div>';
+    } else {
+        box.innerHTML = recs.map((x, i) => `
+            <div class="rec-item" onclick="focusRec(${i})">
+                <div class="rec-item__name">${x.place?.name ?? 'Място'}</div>
+                <div class="rec-item__reason">${x.reason ?? ''}</div>
+            </div>
+        `).join('');
+    }
+
+    const bounds = [];
+    recs.forEach(x => {
+        const lat = x.place?.lat;
+        const lng = x.place?.lng;
+        if (lat && lng) {
+            L.marker([lat, lng]).addTo(resultMap)
+                .bindPopup(`<strong>${x.place.name}</strong><br>${x.reason ?? ''}`);
+            bounds.push([lat, lng]);
+        }
     });
+
+    if (bounds.length) {
+        resultMap.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    if (d.publicSlug) {
+        loadedPublicLink = window.location.origin + '/api/maps/public/' + d.publicSlug;
+        document.getElementById('publicLinkBox').textContent = loadedPublicLink;
+    }
 }
 
-function refresh() {
-    if (!ml) return;
-    ml.clearLayers();
-    var sel = Array.from(document.querySelectorAll('.ef:checked')).map(function(x) { return x.value; });
-    recs.filter(function(r) { return !r.emotion || sel.includes(r.emotion); }).forEach(function(r) {
-        var lat = r.lat || r.latitude;
-        var lng = r.lng || r.longitude;
-        if (!lat) return;
-        L.marker([lat, lng], { icon: mkIcon(r.emotion) })
-         .bindPopup('<strong style="color:#e8eaf0">' + esc(r.placeName || r.name || '') + '</strong>'
-             + '<div style="font-size:.78rem;color:#aaa">' + esc(r.emotion || '') + '</div>'
-             + '<div style="font-size:.78rem;color:#888">' + esc(r.reason || '') + '</div>')
-         .addTo(ml);
-    });
+function focusRec(index) {
+    const rec = loadedMap?.recommendations?.[index];
+    if (!rec?.place?.lat || !rec?.place?.lng) return;
+    resultMap.setView([rec.place.lat, rec.place.lng], 15);
 }
 
-function boot(data) {
-    document.getElementById('loadScr').style.display = 'none';
-    document.getElementById('mapWrap').style.display  = 'block';
-    document.getElementById('mapTitle').textContent   = data.title || 'Emotional Map';
-    document.getElementById('mapDate').textContent    = data.generatedAtUtc
-        ? 'Генерирано: ' + new Date(data.generatedAtUtc).toLocaleString('bg') : '';
-    document.getElementById('sEmo').textContent  = data.dominantEmotion || '—';
-    document.getElementById('sSumm').textContent = data.summary || 'Няма обобщение.';
-
-    var conf = Math.round((data.confidence || 0) * 100);
-    document.getElementById('sConf').textContent = conf + '%';
-    setTimeout(function() { document.getElementById('sConfBar').style.width = conf + '%'; }, 200);
-
-    recs = data.recommendations || [];
-    document.getElementById('recList').innerHTML = recs.length
-        ? recs.map(function(r) {
-            var lat = r.lat || r.latitude;
-            var lng = r.lng || r.longitude;
-            return '<div class="rec-item" onclick="fly(' + lat + ',' + lng + ')">'
-                + '<div class="rec-item__name">' + esc(r.placeName || r.name || 'Без название') + '</div>'
-                + '<div class="rec-item__reason">' + esc(r.reason || '') + '</div></div>';
-          }).join('')
-        : '<p style="color:#6b7080;font-size:.85rem;">Няма препоръки.</p>';
-
-    var center = recs[0]
-        ? [recs[0].lat || recs[0].latitude, recs[0].lng || recs[0].longitude]
-        : [42.15, 24.75];
-    lmap = L.map('map').setView(center, 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        { attribution: '&copy;CartoDB', maxZoom: 19 }).addTo(lmap);
-    ml = L.layerGroup().addTo(lmap);
-    refresh();
-    lmap.on('click', onMapClick);
-}
-
-fetch('/api/me/maps')
-    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-    .then(function(ms) {
-        var m = ms.find(function(x) { return x.id === MID; });
-        if (m) boot(m); else throw 0;
-    }).catch(function() {
-        fetch('/api/maps/public/' + MID)
-            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-            .then(function(m) { boot(m); })
-            .catch(function() {
-                showG('error', 'Картата не е намерена. <a href="/Account/Login" style="color:#7c6ff7">Влез</a>.');
-            });
-    });
-
-document.querySelectorAll('.ef').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-        this.closest('.fchip').classList.toggle('on', this.checked);
-        refresh();
-    });
-});
-
-function fly(lat, lng) { if (lmap) lmap.flyTo([lat, lng], 16, { duration: 1.2 }); }
-
-document.getElementById('btnAdd').addEventListener('click', function() {
-    addMode = !addMode;
-    this.textContent = addMode ? 'Изключи добавяне' : '&#128205; Добави точка';
-    this.classList.toggle('btn-em-primary', addMode);
-    if (lmap) lmap.getContainer().style.cursor = addMode ? 'crosshair' : '';
-});
-
-function onMapClick(e) {
-    if (!addMode) return;
-    var em   = prompt('Емоция (Joy, Calm, Sadness, Anger, Fear, Romantic):');
-    if (!em) return;
-    var note = prompt('Кратко описание:') || '';
-    fetch('/api/points', {
+async function vote(isAccurate) {
+    if (!mapId) return;
+    const r = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, emotion: em, intensity: 3, note: note })
-    }).then(function(r) {
-        showG(r.ok ? 'ok' : 'error', r.ok ? 'Точката е добавена!' : 'Влез в профила си.');
+        body: JSON.stringify({
+            generatedMapId: mapId,
+            isAccurate: isAccurate,
+            note: isAccurate ? 'Пасва' : 'Не пасва'
+        })
     });
+
+    if (r.ok) showAlert('ok', 'Благодарим за обратната връзка!');
+    else showAlert('error', 'Неуспешно изпращане на feedback.');
 }
 
-document.getElementById('btnRoute').addEventListener('click', function() {
-    var coords = recs.filter(function(r) { return r.lat || r.latitude; })
-                     .slice(0, 5)
-                     .map(function(r) { return [r.lat || r.latitude, r.lng || r.longitude]; });
-    if (coords.length < 2) { showG('warn', 'Няма достатъчно точки.'); return; }
-    if (rl) lmap.removeLayer(rl);
-    rl = L.polyline(coords, { color: '#5bc8c2', weight: 3, dashArray: '6 4' }).addTo(lmap);
-    lmap.fitBounds(rl.getBounds(), { padding: [40, 40] });
+document.getElementById('publicBtn').addEventListener('click', async () => {
+    if (!mapId) return;
+
+    const r = await fetch('/api/maps/' + mapId + '/make-public', { method: 'POST' });
+    if (!r.ok) {
+        showAlert('error', 'Неуспешно публикуване.');
+        return;
+    }
+
+    const d = await r.json();
+    loadedPublicLink = window.location.origin + '/api/maps/public/' + d.publicSlug;
+    document.getElementById('publicLinkBox').textContent = loadedPublicLink;
+    showAlert('ok', 'Картата вече е публична.');
 });
 
-document.getElementById('btnPublish').addEventListener('click', function() {
-    fetch('/api/maps/' + MID + '/publish', { method: 'POST' })
-        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function(d) {
-            var url = window.location.origin + (d.publicUrl || '');
-            document.getElementById('shareInp').value = url;
-            document.getElementById('shareBox').style.display = 'block';
-            showG('ok', 'Картата е публикувана!');
-        }).catch(function() { showG('error', 'Влез в профила си.'); });
+document.getElementById('copyBtn').addEventListener('click', async () => {
+    if (!loadedPublicLink) {
+        showAlert('warn', 'Още няма публичен линк. Направи картата публична първо.');
+        return;
+    }
+
+    await navigator.clipboard.writeText(loadedPublicLink);
+    showAlert('ok', 'Линкът е копиран.');
 });
 
-document.getElementById('btnVote').addEventListener('click', function() {
-    if (voted) return;
-    voted = true;
-    this.classList.add('voted');
-    this.textContent = 'Оценено!';
-    fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mapId: MID, reaction: 'Upvote' })
-    }).catch(function() {});
-    showG('ok', 'Оценката подобрява AI!');
-});
+function showAlert(type, message) {
+    const cls = type === 'ok' ? 'em-alert-ok' :
+                type === 'warn' ? 'em-alert-warn' : 'em-alert-error';
 
-function cpShare() {
-    document.getElementById('shareInp').select();
-    navigator.clipboard.writeText(document.getElementById('shareInp').value);
-    showG('ok', 'Копирано!');
-}
-
-function showG(t, m) {
-    document.getElementById('gAlert').innerHTML =
-        '<div class="em-alert em-alert-' + t + '" style="margin-bottom:1rem">' + m + '</div>';
-    setTimeout(function() { document.getElementById('gAlert').innerHTML = ''; }, 5000);
-}
-
-function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    document.getElementById('alertBox').innerHTML =
+        `<div class="em-alert ${cls}">${message}</div>`;
 }
 </script>
 }

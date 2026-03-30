@@ -82,6 +82,7 @@ public static class DependencyInjection
         services.AddScoped<ReportService>();
         services.AddScoped<StatsService>();
 
+        services.AddScoped<IDistrictRepository, DistrictRepository>();
         return services;
     }
 }

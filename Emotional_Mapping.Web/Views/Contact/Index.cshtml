@@ -1,0 +1,62 @@
+@model Emotional_Mapping.Web.Models.ContactViewModel
+
+@{
+    ViewData["Title"] = "Контакт";
+}
+
+<div class="em-page-header fade-up">
+    <h1 class="em-page-title">Контакт</h1>
+    <p class="em-page-sub">Изпрати съобщение, въпрос или идея директно към GEOFEEL.</p>
+</div>
+
+<div class="contact-wrap fade-up fade-up-1">
+    <div class="contact-card">
+        @if (TempData["ContactSuccess"] != null)
+        {
+            <div class="em-alert em-alert-ok">@TempData["ContactSuccess"]</div>
+        }
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="em-alert em-alert-error">@ViewBag.Error</div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="contact-grid">
+                <div>
+                    <label asp-for="Name" class="em-label">Име</label>
+                    <input asp-for="Name" class="em-input" placeholder="Твоето име" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Email" class="em-label">Имейл</label>
+                    <input asp-for="Email" class="em-input" placeholder="name@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="full">
+                    <label asp-for="Subject" class="em-label">Тема</label>
+                    <input asp-for="Subject" class="em-input" placeholder="Например: Въпрос за проекта" />
+                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                </div>
+
+                <div class="full">
+                    <label asp-for="Message" class="em-label">Съобщение</label>
+                    <textarea asp-for="Message" rows="7" class="em-textarea" placeholder="Напиши съобщението си..."></textarea>
+                    <span asp-validation-for="Message" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div style="margin-top:18px;">
+                <button type="submit" class="btn-em btn-em-primary">Изпрати съобщение</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -49,90 +49,107 @@
 @* </body> *@
 @* </html> *@
 
+@{
+    var displayName = User?.Identity?.Name ?? "Профил";
+    var firstLetter = string.IsNullOrWhiteSpace(displayName) ? "G" : displayName.Substring(0, 1).ToUpper();
+}
+
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>@ViewData["Title"] — Emotional Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GEOFEEL</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
-    @await RenderSectionAsync("Styles", required: false)
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
 </head>
 <body>
+    <header class="em-shell-top">
+        <nav class="em-nav-pro">
+            <a href="/" class="em-brand">
+                <img src="~/images/logo-geofeel.png" alt="GEOFEEL" class="em-brand__logo" />
+            </a>
 
-<nav class="em-nav">
-    <a class="em-nav__brand" href="/">
-        <span class="dot"></span>Emotional Map
-    </a>
-    <ul class="em-nav__links">
-        <li><a href="/">Начало</a></li>
-        <li><a href="/Map">Карта</a></li>
-        <li><a href="/Map/Generate">Генерирай</a></li>
-        @if (User.Identity != null && User.Identity.IsAuthenticated)
-        {
-        <li><a href="/Map/MyMaps">Моите карти</a></li>
-        <li><a href="/Map/AddPlace">Добави място</a></li>
-        }
-        <li><a href="/Stats">Статистики</a></li>
-        @if (User.IsInRole("Admin"))
-        {
-        <li><a href="/Admin" style="color:var(--accent);">&#9889; Admin</a></li>
-        }
-        @if (User.IsInRole("Moderator") && !User.IsInRole("Admin"))
-        {
-        <li><a href="/Moderator" style="color:var(--accent2);">&#128737; Мод.</a></li>
-        }
-    </ul>
-    <div class="em-nav__actions">
-        @if (User.Identity != null && User.Identity.IsAuthenticated)
-        {
-        @if (User.IsInRole("SuperUser"))
-        {
-        <span class="em-badge em-badge-super">&#9889; SuperUser</span>
-        }
-        else if (User.IsInRole("Admin"))
-        {
-        <span class="em-badge em-badge-admin">Admin</span>
-        }
-        else if (User.IsInRole("Moderator"))
-        {
-        <span class="em-badge em-badge-mod">&#128737; Мод.</span>
-        }
-        <span class="btn-em btn-em-ghost btn-em-sm" style="cursor:default;">
-                &#128100; @User.Identity.Name
-            </span>
-        <form method="post" action="/Account/Logout" style="display:inline;">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn-em btn-em-ghost btn-em-sm">Изход</button>
-        </form>
-        }
-        else
-        {
-        <a href="/Account/Login"    class="btn-em btn-em-ghost btn-em-sm">Вход</a>
-        <a href="/Account/Register" class="btn-em btn-em-primary btn-em-sm">Регистрация</a>
-        }
-    </div>
-</nav>
+            <div class="em-nav-pro__center">
+                <a href="/" class="em-nav-pro__link">Начало</a>
+                <a href="/Map" class="em-nav-pro__link">Карта</a>
+                <a href="/Map/Generate" class="em-nav-pro__link">Генерирай карта</a>
+                <a href="/Stats" class="em-nav-pro__link">Статистики</a>
 
-<main class="em-main">
-    @RenderBody()
-</main>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a href="/Map/MyMaps" class="em-nav-pro__link">Моите карти</a>
+                    <a href="/Map/AddPlace" class="em-nav-pro__link">Добави място</a>
+                }
 
-<footer class="em-footer">
-    <span>&copy; 2026 Emotional Map &mdash; Antonio Stavrakev</span>
-    <div style="display:flex;gap:1.5rem;">
-        <a href="/Privacy">&#128274; Поверителност</a>
-        <a href="/Stats">&#128200; Статистики</a>
-    </div>
-</footer>
+                <a href="/Contact" class="em-nav-pro__link">Контакт</a>
 
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-@await RenderSectionAsync("Scripts", required: false)
+                @if (User.IsInRole("Admin"))
+                {
+                    <a href="/Admin" class="em-nav-pro__link em-nav-pro__link--admin">Админ</a>
+                }
+            </div>
+
+            <div class="em-nav-pro__right">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <details class="em-account">
+                        <summary class="em-account__summary">
+                            <span class="em-account__avatar">@firstLetter</span>
+                            <span class="em-account__name">@displayName</span>
+                            <span class="em-account__chevron">⌄</span>
+                        </summary>
+
+                        <div class="em-account__menu">
+                            <div class="em-account__menu-head">
+                                <div class="em-account__menu-name">@displayName</div>
+                                @if (User.IsInRole("SuperUser"))
+                                {
+                                    <span class="em-badge em-badge-super">SuperUser</span>
+                                }
+                            </div>
+
+                            <a href="/Map/MyMaps" class="em-account__item">Моите карти</a>
+                            <a href="/Map/Generate" class="em-account__item">Нова карта</a>
+                            <a href="/Contact" class="em-account__item">Контакт</a>
+
+                            <form method="post" action="/Account/Logout" class="em-account__form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="em-account__logout">Изход</button>
+                            </form>
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    <a href="/Account/Login" class="btn-em btn-em-ghost btn-em-sm">Вход</a>
+                    <a href="/Account/Register" class="btn-em btn-em-primary btn-em-sm">Регистрация</a>
+                }
+            </div>
+        </nav>
+    </header>
+
+    <main class="em-main">
+        @RenderBody()
+    </main>
+
+    <footer class="em-footer">
+        <span>&copy; 2026 GEOFEEL — Emotional Mapping</span>
+        <div class="em-footer__links">
+            <a href="/Privacy">Поверителност</a>
+            <a href="/Contact">Контакт</a>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
 </body>
 </html>
-

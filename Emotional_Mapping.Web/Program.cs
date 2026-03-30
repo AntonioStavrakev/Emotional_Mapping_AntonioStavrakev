@@ -29,6 +29,7 @@
 // app.Run();
 
 using System.Globalization;
+using Emotional_Mapping.Web.Services;
 using Microsoft.AspNetCore.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +57,7 @@ builder.Services.AddAuthentication("Cookies")
         options.AccessDeniedPath = "/Account/Login";
         options.ExpireTimeSpan   = TimeSpan.FromDays(7);
     });
+builder.Services.AddScoped<IContactEmailService, SmtpContactEmailService>();
 
 builder.Services.AddAuthorization();
 

@@ -4,121 +4,189 @@
 
 <div class="em-page-header fade-up">
     <h1 class="em-page-title">Статистики</h1>
-    <p class="em-page-sub">Обобщени данни от емоционалната карта</p>
+    <p class="em-page-sub">Общ преглед на използването, емоциите и най-позитивните райони.</p>
 </div>
 
-<div class="stats4 fade-up fade-up-1">
+<div class="em-card fade-up fade-up-1" style="margin-bottom:18px;">
+    <div class="em-form-group" style="max-width:360px;margin-bottom:0;">
+        <label class="em-label">Град</label>
+        <select id="citySelect" class="em-select">
+            <option value="">Избери град</option>
+        </select>
+    </div>
+</div>
+
+<div class="stats4 fade-up fade-up-2">
+    <div class="stat-card">
+        <div class="stat-card__label">Общо AI заявки</div>
+        <div class="stat-card__value" id="statRequests">0</div>
+        <div class="stat-card__sub">за избрания град</div>
+    </div>
     <div class="stat-card">
         <div class="stat-card__label">Общо точки</div>
-        <div class="stat-card__value" id="stTotal">—</div>
-        <div class="stat-card__sub">в базата данни</div>
+        <div class="stat-card__value" id="statPoints">0</div>
+        <div class="stat-card__sub">емоционални точки</div>
     </div>
     <div class="stat-card">
-        <div class="stat-card__label">Доминираща емоция</div>
-        <div class="stat-card__value" id="stDom" style="font-size:1.4rem;">—</div>
+        <div class="stat-card__label">Най-честа емоция</div>
+        <div class="stat-card__value" id="statTopEmotion">—</div>
+        <div class="stat-card__sub">доминиращо настроение</div>
     </div>
     <div class="stat-card">
-        <div class="stat-card__label">Генерирани карти</div>
-        <div class="stat-card__value" id="stMaps">—</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-card__label">Активни потребители</div>
-        <div class="stat-card__value" id="stUsers">—</div>
+        <div class="stat-card__label">Най-позитивен район</div>
+        <div class="stat-card__value" id="statTopDistrict">—</div>
+        <div class="stat-card__sub">по district score</div>
     </div>
 </div>
 
-<div class="stats2 fade-up fade-up-2">
+<div class="stats2 fade-up fade-up-3">
     <div class="em-card">
-        <div class="em-card__title">Разпределение на емоциите</div>
-        <div id="ebarWrap">
-            <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
-        </div>
+        <div class="em-card__title">Най-чести емоции</div>
+        <div id="topEmotionsBox"></div>
     </div>
+
     <div class="em-card">
-        <div class="em-card__title">Активност (последните 7 дни)</div>
-        <div class="tl-wrap" id="tlChart"></div>
-        <div class="tl-lbls" id="tlLbls"></div>
+        <div class="em-card__title">Райони по emotional score</div>
+        <div id="districtScoresBox"></div>
     </div>
 </div>
 
-<div class="em-card fade-up fade-up-3">
-    <div class="em-card__title" style="margin-bottom:1.25rem;">Най-позитивни райони</div>
-    <div id="districtList">
-        <p style="color:#6b7080;font-size:.85rem;">Зареждане...</p>
+<div class="stats2 fade-up fade-up-4">
+    <div class="em-card">
+        <div class="em-card__title">AI Dashboard</div>
+        <div id="aiDashboardBox"></div>
+    </div>
+
+    <div class="em-card">
+        <div class="em-card__title">Timeline</div>
+        <div id="timelineBox"></div>
     </div>
 </div>
 
 @section Scripts {
 <script>
-var ec = {
-    Joy:'#f6c948', Calm:'#5bc8c2', Sadness:'#6382c8',
-    Anger:'#e85555', Fear:'#9c6ee8', Romantic:'#e87090'
-};
+const citySelect = document.getElementById('citySelect');
 
-fetch('/api/stats?cityId=00000000-0000-0000-0000-000000000000')
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(s) {
-        if (!s) return;
-        document.getElementById('stTotal').textContent = s.totalPoints || '—';
-        document.getElementById('stMaps').textContent  = s.totalMaps  || '—';
-        document.getElementById('stUsers').textContent = s.totalUsers  || '—';
-        document.getElementById('stDom').textContent   = s.dominantEmotion || '—';
-
-        if (s.emotionStats && s.emotionStats.length) {
-            var mx = Math.max.apply(null, s.emotionStats.map(function(e) { return e.count; })) || 1;
-            document.getElementById('ebarWrap').innerHTML = s.emotionStats.map(function(e) {
-                return '<div class="ebar-row">'
-                    + '<span class="ebar-lbl">' + esc(e.emotion || '') + '</span>'
-                    + '<div class="ebar-track"><div class="ebar-fill" style="width:'
-                    + Math.round(e.count / mx * 100) + '%;background:' + (ec[e.emotion] || '#7c6ff7')
-                    + '"></div></div>'
-                    + '<span class="ebar-cnt">' + e.count + '</span></div>';
-            }).join('');
-        }
-    }).catch(function() {});
-
-fetch('/api/stats/timeline?cityId=00000000-0000-0000-0000-000000000000')
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(tl) {
-        if (!tl || !tl.length) return;
-        var mx = Math.max.apply(null, tl.map(function(d) { return d.count; })) || 1;
-        document.getElementById('tlChart').innerHTML = tl.map(function(d) {
-            return '<div class="tl-bar" style="height:'
-                + Math.max(Math.round(d.count / mx * 80), 4)
-                + 'px;background:#7c6ff7;opacity:.7" data-tip="'
-                + esc(d.date) + ': ' + d.count + '"></div>';
-        }).join('');
-        document.getElementById('tlLbls').innerHTML = tl.map(function(d) {
-            return '<span style="font-size:.62rem;color:#6b7080;flex:1;text-align:center">'
-                + new Date(d.date).toLocaleDateString('bg', { day: '2-digit', month: '2-digit' })
-                + '</span>';
-        }).join('');
-    }).catch(function() {});
-
-fetch('/api/stats/district-scores?cityId=00000000-0000-0000-0000-000000000000')
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(ds) {
-        if (!ds || !ds.length) {
-            document.getElementById('districtList').innerHTML = '<p style="color:#6b7080">Няма данни.</p>';
-            return;
-        }
-        document.getElementById('districtList').innerHTML = ds.slice(0, 10).map(function(d, i) {
-            return '<div class="drow">'
-                + '<div style="display:flex;align-items:center;gap:.75rem;">'
-                + '<span style="font-family:Syne,sans-serif;font-weight:700;font-size:.85rem;'
-                + 'color:#6b7080;min-width:1.5rem;">' + (i + 1) + '</span>'
-                + '<strong style="font-size:.875rem;">' + esc(d.districtName || '') + '</strong></div>'
-                + '<div style="display:flex;align-items:center;gap:1rem;">'
-                + '<span class="em-badge em-badge-joy">' + esc(d.dominantEmotion || '') + '</span>'
-                + '<span style="font-size:.78rem;color:#6b7080;">' + d.pointCount + ' точки</span>'
-                + '</div></div>';
-        }).join('');
-    }).catch(function() {
-        document.getElementById('districtList').innerHTML = '<p style="color:#6b7080">Няма данни.</p>';
+fetch('/api/cities')
+    .then(r => r.json())
+    .then(cities => {
+        (cities || []).forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name;
+            citySelect.appendChild(o);
+        });
     });
 
-function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+citySelect.addEventListener('change', loadStats);
+
+async function loadStats() {
+    const cityId = citySelect.value;
+    if (!cityId) return;
+
+    const [statsRes, districtRes, aiRes, timelineRes] = await Promise.all([
+        fetch('/api/stats?cityId=' + cityId),
+        fetch('/api/stats/district-scores?cityId=' + cityId),
+        fetch('/api/stats/ai-dashboard'),
+        fetch('/api/stats/timeline?cityId=' + cityId)
+    ]);
+
+    const stats = statsRes.ok ? await statsRes.json() : null;
+    const districts = districtRes.ok ? await districtRes.json() : [];
+    const ai = aiRes.ok ? await aiRes.json() : null;
+    const timeline = timelineRes.ok ? await timelineRes.json() : [];
+
+    document.getElementById('statRequests').textContent = stats?.totalRequests ?? 0;
+    document.getElementById('statPoints').textContent = stats?.totalPoints ?? 0;
+    document.getElementById('statTopEmotion').textContent = stats?.topEmotions?.[0]?.key ?? '—';
+    document.getElementById('statTopDistrict').textContent = districts?.[0]?.districtName ?? '—';
+
+    renderTopEmotions(stats?.topEmotions ?? []);
+    renderDistrictScores(districts ?? []);
+    renderAiDashboard(ai);
+    renderTimeline(timeline ?? []);
+}
+
+function renderTopEmotions(items) {
+    const box = document.getElementById('topEmotionsBox');
+    if (!items.length) {
+        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        return;
+    }
+
+    const max = Math.max(...items.map(x => x.value));
+    box.innerHTML = items.map(x => `
+        <div class="ebar-row">
+            <div class="ebar-lbl">${x.key}</div>
+            <div class="ebar-track">
+                <div class="ebar-fill" style="width:${(x.value / max) * 100}%;background:linear-gradient(90deg,#89d957,#c9e265)"></div>
+            </div>
+            <div class="ebar-cnt">${x.value}</div>
+        </div>
+    `).join('');
+}
+
+function renderDistrictScores(items) {
+    const box = document.getElementById('districtScoresBox');
+    if (!items.length) {
+        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        return;
+    }
+
+    box.innerHTML = items.map(x => `
+        <div class="drow">
+            <div>
+                <strong>${x.districtName}</strong><br>
+                <small class="text-muted">Positive: ${x.positiveScore} • Negative: ${x.negativeScore}</small>
+            </div>
+            <span class="em-badge em-badge-super">${x.finalScore}</span>
+        </div>
+    `).join('');
+}
+
+function renderAiDashboard(ai) {
+    const box = document.getElementById('aiDashboardBox');
+    if (!ai) {
+        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        return;
+    }
+
+    box.innerHTML = `
+        <div class="drow"><span>Общо заявки</span><strong>${ai.totalRequests ?? 0}</strong></div>
+        <div style="margin-top:12px;">
+            <div class="em-card__title" style="margin-bottom:10px;">Top emotions</div>
+            ${(ai.topEmotions ?? []).map(x => `<div class="drow"><span>${x.emotion}</span><strong>${x.count}</strong></div>`).join('')}
+        </div>
+        <div style="margin-top:12px;">
+            <div class="em-card__title" style="margin-bottom:10px;">Top users</div>
+            ${(ai.topUsers ?? []).map(x => `<div class="drow"><span>${x.userId}</span><strong>${x.requests}</strong></div>`).join('')}
+        </div>
+    `;
+}
+
+function renderTimeline(items) {
+    const box = document.getElementById('timelineBox');
+    if (!items.length) {
+        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        return;
+    }
+
+    const grouped = {};
+    items.forEach(x => {
+        grouped[x.timeLabel] = (grouped[x.timeLabel] || 0) + x.count;
+    });
+
+    const labels = Object.keys(grouped);
+    const max = Math.max(...Object.values(grouped));
+
+    box.innerHTML = `
+        <div class="tl-wrap">
+            ${labels.map(k => `<div class="tl-bar" data-tip="${k}: ${grouped[k]}" style="height:${Math.max(8, (grouped[k]/max)*100)}%;background:linear-gradient(180deg,#89d957,#c9e265)"></div>`).join('')}
+        </div>
+        <div class="tl-lbls">
+            ${labels.map(k => `<small>${k}</small>`).join('')}
+        </div>
+    `;
 }
 </script>
 }
