@@ -7,4 +7,5 @@ public interface IPlaceRepository
 {
     Task<List<Place>> GetByCityAsync(Guid cityId, Guid? districtId, PlaceType? type, CancellationToken ct);
     Task<Place?> GetAsync(Guid id, CancellationToken ct);
+    Task AddAsync(Place place, CancellationToken ct);
 }

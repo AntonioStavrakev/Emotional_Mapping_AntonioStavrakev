@@ -34,9 +34,16 @@ public class MapController : Controller
         return View();
     }
 
-    // GET /Map/AddPlace — само за регистрирани
+    // GET /Map/AddPlace — добавяне на емоционална точка
     [Authorize]
     public IActionResult AddPlace()
+    {
+        return View();
+    }
+
+    // GET /Map/SuggestPlace — предложение за ново място в каталога
+    [Authorize]
+    public IActionResult SuggestPlace()
     {
         return View();
     }

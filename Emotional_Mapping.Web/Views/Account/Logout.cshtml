@@ -1,13 +1,13 @@
 @{
-    ViewData["Title"] = "Изход";
+    ViewData["Title"] = T["Account.Logout"];
 }
 
 <div style="text-align:center;padding:5rem 2rem;" class="fade-up">
     <div style="font-size:3rem;margin-bottom:1.5rem;">&#128075;</div>
     <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.8rem;letter-spacing:-.03em;margin-bottom:.75rem;">
-        Излизане...
+        @T.Pick("Излизане...", "Signing out...")
     </h1>
-    <p style="color:#6b7080;font-size:.95rem;margin-bottom:2rem;">Моля изчакай.</p>
+    <p style="color:#6b7080;font-size:.95rem;margin-bottom:2rem;">@T.Pick("Моля изчакай.", "Please wait.")</p>
 
     <form id="logoutForm" method="post" asp-controller="Account" asp-action="Logout">
         @Html.AntiForgeryToken()

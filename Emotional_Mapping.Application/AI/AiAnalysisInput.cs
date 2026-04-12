@@ -10,8 +10,11 @@ public class AiAnalysisInput
 
     public string CityName { get; set; } = "";
     public string? DistrictName { get; set; }
+    public double CityCenterLat { get; set; }
+    public double CityCenterLng { get; set; }
 
     public List<PlaceContextItem> Places { get; set; } = new();
     public List<EmotionalSignalItem> EmotionalSignals { get; set; } = new();
-     public int? RadiusMeters { get; set; }
+    public int? RadiusMeters { get; set; }
+    public string Language { get; set; } = "bg";
 }

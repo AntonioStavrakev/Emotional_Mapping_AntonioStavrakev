@@ -1,121 +1,124 @@
+@model Emotional_Mapping.Web.Models.HomeIndexViewModel
+@using Emotional_Mapping.Domain.Enums
 @{
-    ViewData["Title"] = "Начало";
+    ViewData["Title"] = T["Nav.Home"];
 }
 
 <section class="hero fade-up">
     <div>
-        <p class="hero__eyebrow">GEOFEEL • AI emotional mapping</p>
+        <p class="hero__eyebrow">@T["Hero.Eyebrow"]</p>
         <h1 class="hero__title">
-            Усети града<br />
-            през <span>емоциите</span><br />
-            на хората
+            @T["Hero.TitleLine1"]<br />
+            <span>@T["Hero.TitleAccent"]</span><br />
+            @T["Hero.TitleLine3"]
         </h1>
 
-        <p class="hero__desc">
-            GEOFEEL визуализира спокойствие, радост, носталгия, вдъхновение и още
-            емоции върху реална карта. Генерирай персонална карта с AI, запази я,
-            сподели я и открий най-подходящите места според настроението си.
-        </p>
+        <p class="hero__desc">@T["Hero.Desc"]</p>
 
         <div class="hero__actions">
-            <a href="/Map/Generate" class="btn-em btn-em-primary">Генерирай карта с AI</a>
-            <a href="/Map" class="btn-em btn-em-ghost">Разгледай картата</a>
+            <a href="/Map/Generate" class="btn-em btn-em-primary">@T["Hero.Primary"]</a>
+            <a href="/Map" class="btn-em btn-em-ghost">@T["Hero.Secondary"]</a>
         </div>
     </div>
 
     <div class="hero__visual fade-up fade-up-2">
-        <div class="emotion-cloud">
-            <div class="e e1">Спокойствие</div>
-            <div class="e e2">Радост</div>
-            <div class="e e3">Вдъхновение</div>
-            <div class="e e4">Романтика</div>
-            <div class="e e5">Носталгия</div>
-            <div class="e e6">Релакс</div>
-            <div class="e e7">Еуфория</div>
+        <div class="emotion-cloud" id="emotionCloud" aria-live="polite">
+            @for (var i = 0; i < Model.HeroEmotionKeys.Count; i++)
+            {
+                var emotionKey = Model.HeroEmotionKeys[i];
+                var label = emotionKey;
+
+                if (Enum.TryParse<EmotionType>(emotionKey, true, out var emotionType))
+                {
+                    label = T.EmotionLabel(emotionType);
+                }
+
+                <div class="e e@(i + 1)">@label</div>
+            }
         </div>
     </div>
 </section>
 
 <div class="fade-up fade-up-2">
-    <h2 class="section-title">Как работи?</h2>
+    <h2 class="section-title">@T["Home.HowItWorks"]</h2>
     <div class="features">
         <div class="feature-card">
             <div class="feature-card__icon">📍</div>
-            <div class="feature-card__title">Добавяй емоционални точки</div>
-            <p class="feature-card__desc">Маркирай място, избери емоция, интензитет и описание.</p>
+            <div class="feature-card__title">@T["Home.Feature1Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature1Desc"]</p>
         </div>
         <div class="feature-card">
             <div class="feature-card__icon">🤖</div>
-            <div class="feature-card__title">AI анализ</div>
-            <p class="feature-card__desc">Въведи настроение и системата ще генерира карта и препоръки.</p>
+            <div class="feature-card__title">@T["Home.Feature2Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature2Desc"]</p>
         </div>
         <div class="feature-card">
             <div class="feature-card__icon">🗺️</div>
-            <div class="feature-card__title">Интерактивна карта</div>
-            <p class="feature-card__desc">Визуализирай места, heatmap и емоционални зони.</p>
+            <div class="feature-card__title">@T["Home.Feature3Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature3Desc"]</p>
         </div>
         <div class="feature-card">
             <div class="feature-card__icon">☁️</div>
-            <div class="feature-card__title">Cloud база данни</div>
-            <p class="feature-card__desc">Картите и точките се пазят в облачна база, достъпна отвсякъде.</p>
+            <div class="feature-card__title">@T["Home.Feature4Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature4Desc"]</p>
         </div>
         <div class="feature-card">
             <div class="feature-card__icon">🔗</div>
-            <div class="feature-card__title">Публични карти</div>
-            <p class="feature-card__desc">Споделяй карта с линк и показвай резултата на други хора.</p>
+            <div class="feature-card__title">@T["Home.Feature5Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature5Desc"]</p>
         </div>
         <div class="feature-card">
             <div class="feature-card__icon">⭐</div>
-            <div class="feature-card__title">Обратна връзка</div>
-            <p class="feature-card__desc">Оценявай дали картата отговаря на настроението ти.</p>
+            <div class="feature-card__title">@T["Home.Feature6Title"]</div>
+            <p class="feature-card__desc">@T["Home.Feature6Desc"]</p>
         </div>
     </div>
 </div>
 
-<div class="fade-up fade-up-3">
-    <h2 class="section-title">Планове</h2>
+<div class="fade-up fade-up-3" id="plans">
+    <h2 class="section-title">@T["Plans.Title"]</h2>
     <div class="plans">
         <div class="plan-card">
-            <p class="plan-card__name">Free</p>
-            <p class="plan-card__price">0 € <span>/ месец</span></p>
+            <p class="plan-card__name">@T.Pick("Безплатен", "Free")</p>
+            <p class="plan-card__price">0 € <span>/ @T.Pick("месец", "month")</span></p>
             <ul class="plan-features">
-                <li>До 10 AI генерации на ден</li>
-                <li>Стандартен heatmap</li>
-                <li>Запазване на карти</li>
-                <li>Добавяне на точки</li>
+                <li>@T["Plans.FreeLimit"]</li>
+                <li>@T["Plans.FreeFeature2"]</li>
+                <li>@T["Plans.FreeFeature3"]</li>
+                <li>@T["Plans.FreeFeature4"]</li>
             </ul>
             <a href="/Account/Register" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
-                Безплатен старт
+                @T["Plans.FreeCta"]
             </a>
         </div>
 
         <div class="plan-card plan-card--featured">
             <div class="plan-card__top">
-                <p class="plan-card__name">SuperUser</p>
+                <p class="plan-card__name">Premium</p>
                 <span class="em-badge em-badge-super">Premium</span>
             </div>
 
-            <p class="price-premium">0.20 €</p>
-            <p class="price-note">еднократен стартов тестов план</p>
+            <p class="price-premium">0.50 €</p>
+            <p class="price-note">@T["Plans.PriceNote"]</p>
 
             <ul class="plan-features">
-                <li>До 100 AI генерации на ден</li>
-                <li>Premium heatmap</li>
-                <li>District scores</li>
-                <li>Saved routes</li>
-                <li>Публични линкове</li>
+                <li>@T["Plans.PremiumLimit"]</li>
+                <li>@T["Plans.PremiumFeature2"]</li>
+                <li>@T["Plans.PremiumFeature3"]</li>
+                <li>@T["Plans.PremiumFeature4"]</li>
+                <li>@T["Plans.PremiumFeature5"]</li>
             </ul>
 
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <button onclick="upgradeToPremium()" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
-                    Надгради със Stripe
+                    @T["Plans.Upgrade"]
                 </button>
             }
             else
             {
                 <a href="/Account/Register" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
-                    Започни сега
+                    @T["Plans.PremiumCta"]
                 </a>
             }
         </div>
@@ -124,11 +127,56 @@
 
 @section Scripts {
 <script>
+const heroBubbles = [
+    { selector: '.e1', x: 34, y: -24, speed: 0.75, phase: 0.2, scale: 0.04, rotate: 6 },
+    { selector: '.e2', x: -24, y: 28, speed: 0.92, phase: 1.1, scale: 0.03, rotate: -5 },
+    { selector: '.e3', x: 30, y: 20, speed: 0.62, phase: 2.2, scale: 0.04, rotate: 7 },
+    { selector: '.e4', x: -28, y: -22, speed: 0.84, phase: 3.0, scale: 0.03, rotate: -8 },
+    { selector: '.e5', x: 26, y: -30, speed: 0.7, phase: 4.1, scale: 0.04, rotate: 5 },
+    { selector: '.e6', x: -18, y: 24, speed: 1.05, phase: 5.0, scale: 0.03, rotate: -6 },
+    { selector: '.e7', x: 22, y: 26, speed: 0.8, phase: 2.7, scale: 0.04, rotate: 6 }
+];
+
+function animateHeroBubbles(timeMs) {
+    const t = timeMs / 1000;
+
+    heroBubbles.forEach(cfg => {
+        const el = document.querySelector(cfg.selector);
+        if (!el) return;
+
+        const x = Math.sin(t * cfg.speed + cfg.phase) * cfg.x;
+        const y = Math.cos(t * (cfg.speed * 0.87) + cfg.phase) * cfg.y;
+        const scale = 1 + Math.sin(t * (cfg.speed * 1.2) + cfg.phase) * cfg.scale;
+        const rotate = Math.sin(t * cfg.speed + cfg.phase) * cfg.rotate;
+
+        el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale}) rotate(${rotate}deg)`;
+    });
+
+    requestAnimationFrame(animateHeroBubbles);
+}
+
+requestAnimationFrame(animateHeroBubbles);
+
 function upgradeToPremium() {
-    fetch('/api/payments/create-checkout', { method: 'POST' })
-        .then(r => r.json())
-        .then(d => { if (d.url) window.location.href = d.url; })
-        .catch(() => alert('Моля, влез в профила си.'));
+    fetch('/api/payments/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productType: 'premium' })
+    })
+        .then(async r => {
+            const d = await r.json().catch(() => null);
+            if (!r.ok) {
+                alert(d?.message || '@T.Pick("Неуспешно стартиране на Stripe checkout.", "Failed to start Stripe checkout.")');
+                return;
+            }
+
+            if (d?.url) {
+                window.location.href = d.url;
+            } else {
+                alert('@T.Pick("Stripe не върна checkout URL.", "Stripe did not return a checkout URL.")');
+            }
+        })
+        .catch(() => alert('@T.Pick("Мрежова грешка при връзка със Stripe.", "Network error while contacting Stripe.")'));
 }
 </script>
 }

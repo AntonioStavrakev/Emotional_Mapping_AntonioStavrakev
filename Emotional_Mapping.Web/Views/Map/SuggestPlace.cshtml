@@ -1,0 +1,509 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+@using Emotional_Mapping.Domain.Enums
+
+@functions {
+    IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+
+    string PlaceTypeLabel(PlaceType type) => T.PlaceTypeLabel(type);
+}
+
+@{
+    ViewData["Title"] = T["Nav.SuggestPlace"];
+    var placeTypes = Enum.GetValues<PlaceType>().ToList();
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="em-page-header fade-up">
+    <span class="em-page-header__icon">📍</span>
+    <div class="em-page-header__badge">✦ @T.Pick("Предложи място", "Suggest a place")</div>
+    <h1 class="em-page-title">@T.Pick("Предложи ново място", "Suggest a new place")</h1>
+    <p class="em-page-sub">
+        @T.Pick("Тук добавяш нов обект в каталога с места — например парк, кафе, музей или панорамна гледка. След одобрение това място може да участва в AI препоръките.", "Here you add a new place to the catalog, for example a park, cafe, museum, or viewpoint. After approval, this place can participate in AI recommendations.")
+    </p>
+</div>
+
+<div id="alertBox"></div>
+
+<div class="add-grid fade-up fade-up-1">
+    <div class="add-form">
+        <h2 class="add-form__title">@T.Pick("Ново място", "New place")</h2>
+        <div class="click-hint">@T.Pick("Щракни върху картата, за да маркираш точната локация", "Click on the map to mark the exact location")</div>
+
+        <div class="geo-assist">
+            <div id="geoStatus" class="geo-assist__status">@T.Pick("Засичаме текущата ти локация. При hotspot позицията често е приблизителна.", "We are detecting your current location. On a hotspot, the position is often approximate.")</div>
+            <div class="geo-assist__actions">
+                <button type="button" class="btn-em btn-em-secondary" id="useDeviceLocationBtn">@T.Pick("Използвай текущата ми локация", "Use my current location")</button>
+                <button type="button" class="btn-em btn-em-secondary" id="focusCityBtn">@T.Pick("Центрирай по избрания град", "Center on the selected city")</button>
+            </div>
+        </div>
+
+        <form id="suggestPlaceForm">
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Град", "City")</label>
+                <select class="em-select" id="citySel" required>
+                    <option value="">— @T.Pick("Избери град", "Select a city") —</option>
+                </select>
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Район", "District") <span class="em-label__optional">@T.Pick("по избор", "optional")</span></label>
+                <select class="em-select" id="districtSel">
+                    <option value="">@T.Pick("Всички райони", "All districts")</option>
+                </select>
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Име на мястото", "Place name")</label>
+                <input class="em-input" id="nameInp" placeholder="@T.Pick("Напр. Малка градска градина", "For example: Small city garden")" maxlength="120" required />
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Тип място", "Place type")</label>
+                <select class="em-select" id="typeSel">
+                    @foreach (var type in placeTypes)
+                    {
+                        <option value="@((int)type)">
+                            @PlaceTypeLabel(type)
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Координати", "Coordinates")</label>
+                <div class="coords-row">
+                    <input class="em-input" id="latInp" placeholder="@T.Pick("Ширина", "Latitude")" readonly />
+                    <input class="em-input" id="lngInp" placeholder="@T.Pick("Дължина", "Longitude")" readonly />
+                </div>
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Адрес", "Address") <span class="em-label__optional">@T.Pick("по избор", "optional")</span></label>
+                <input class="em-input" id="addressInp" placeholder="@T.Pick("Напр. ул. Иван Вазов 12", "For example: 12 Ivan Vazov St.")" maxlength="180" />
+            </div>
+
+            <div class="em-form-group">
+                <label class="em-label">@T.Pick("Описание", "Description") <span class="em-label__optional">@T.Pick("по избор", "optional")</span></label>
+                <textarea class="em-textarea" id="descriptionInp" rows="3"
+                          placeholder="@T.Pick("С какво е ценно това място и защо да присъства в GEOFEEL?", "Why is this place valuable and why should it appear in GEOFEEL?")"></textarea>
+            </div>
+
+            <button type="submit" id="submitPlaceBtn" class="btn-em btn-em-primary"
+                    style="width:100%;justify-content:center;padding:.8rem;" disabled>
+                @T.Pick("Изпрати предложение", "Send suggestion")
+            </button>
+        </form>
+    </div>
+
+    <div id="suggestMap"
+         style="height:500px;border-radius:14px;border:1px solid rgba(255,255,255,.07);"></div>
+</div>
+
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var texts = {
+    allDistricts: @Js(T.Pick("Всички райони", "All districts")),
+    selectedLocation: @Js(T.Pick("Избрана локация", "Selected location")),
+    currentLocation: @Js(T.Pick("Текуща локация", "Current location")),
+    awaitingGps: @Js(T.Pick("Искаме точната ти GPS локация. Ако браузърът поиска разрешение, потвърди заявката.", "We need your precise GPS location. If the browser asks for permission, confirm it.")),
+    locatingPassive: @Js(T.Pick("Опитваме да разпознаем местоположението ти. За точен GPS можеш да използваш бутона.", "We are trying to detect your location. For precise GPS, you can use the button.")),
+    approximateNetwork: @Js(T.Pick("Показваме приблизителна локация по мрежа. Натисни „Използвай текущата ми локация“, за да позволиш точния GPS достъп.", "We are showing an approximate network location. Press \"Use my current location\" to allow precise GPS access.")),
+    locationDenied: @Js(T.Pick("Браузърът в момента не разрешава точната ти локация. Разреши я от иконата до адреса и опитай пак.", "The browser is not allowing your precise location right now. Allow it from the address bar icon and try again.")),
+    locationInsecure: @Js(T.Pick("Точната локация работи само през защитена връзка (https или localhost), затова показваме приблизителна по мрежа.", "Precise location only works over a secure connection (https or localhost), so we are showing an approximate network location.")),
+    locationUnsupported: @Js(T.Pick("Този браузър не поддържа точна геолокация, затова показваме приблизителна по мрежа.", "This browser does not support precise geolocation, so we are showing an approximate network location.")),
+    gpsUnavailable: @Js(T.Pick("Не успяхме да вземем точна GPS локация, затова използвахме приблизителна по мрежа.", "We could not get a precise GPS location, so we used an approximate network location.")),
+    locationFailed: @Js(T.Pick("Не успяхме да определим локацията ти. Избери град и маркирай мястото ръчно.", "We could not determine your location. Choose a city and mark the place manually.")),
+    exactLocationFailed: @Js(T.Pick("Не успяхме да вземем точна локация. Маркирай мястото ръчно.", "We could not get a precise location. Mark the place manually.")),
+    approximatePlaceHint: @Js(T.Pick("Имаме само приблизителна локация. Избери точното място от картата.", "We only have an approximate location. Select the exact place from the map.")),
+    nearestCity: @Js(T.Pick("Разпознахме най-близкия град:", "We detected the nearest city:")),
+    locationExact: @Js(T.Pick("Локацията е засечена точно", "Your location was detected precisely")),
+    locationApproximate: @Js(T.Pick("Локацията е приблизителна", "Your location is approximate")),
+    canUseDirectly: @Js(T.Pick("Можеш да я използваш директно.", "You can use it directly.")),
+    refineByClick: @Js(T.Pick("Ако адресът не е верен, доуточни с щракване върху картата.", "If the address is not right, refine it by clicking on the map.")),
+    citiesLoadFailed: @Js(T.Pick("Неуспешно зареждане на градовете.", "Failed to load cities.")),
+    chooseCityForCenter: @Js(T.Pick("Избери град, за да работим с точен център на картата.", "Choose a city so we can use an accurate map center.")),
+    cityCenteredPlace: @Js(T.Pick("Картата е центрирана по избрания град. Използвай текущата си локация или щракни точното място.", "The map is centered on the selected city. Use your current location or click the exact place.")),
+    mapSelectionStatus: @Js(T.Pick("Избра точна позиция от картата.", "You selected an exact position from the map.")),
+    cityAutoSet: @Js(T.Pick("Градът е зададен автоматично на", "The city was set automatically to")),
+    chooseCityFirst: @Js(T.Pick("Първо избери град, за да центрираме картата по него.", "Select a city first so we can center the map on it.")),
+    cityCentered: @Js(T.Pick("Картата е центрирана по избрания град.", "The map is centered on the selected city.")),
+    chooseCityValidation: @Js(T.Pick("Избери град.", "Choose a city.")),
+    choosePlaceNameValidation: @Js(T.Pick("Въведи име на мястото.", "Enter a place name.")),
+    choosePointValidation: @Js(T.Pick("Избери позиция на картата.", "Choose a position on the map.")),
+    sending: @Js(T.Pick("Изпращане...", "Sending...")),
+    sentSuccess: @Js(T.Pick("Предложението е изпратено.", "The suggestion was sent.")),
+    loginRequired: @Js(T.Pick("Трябва да влезеш в профила си, за да предложиш място.", "You need to sign in to suggest a place.")),
+    submitFailed: @Js(T.Pick("Неуспешно изпращане на предложението.", "Failed to send the suggestion.")),
+    networkError: @Js(T.Pick("Мрежова грешка при изпращане.", "Network error while sending.")),
+    submitButton: @Js(T.Pick("Изпрати предложение", "Send suggestion"))
+};
+
+var smap = L.map('suggestMap');
+var defaultView = [42.7339, 25.4858];
+var defaultZoom = 7;
+var cityCatalog = [];
+var locating = false;
+var citySelect = document.getElementById('citySel');
+var districtSelect = document.getElementById('districtSel');
+var geoStatus = document.getElementById('geoStatus');
+var useDeviceLocationBtn = document.getElementById('useDeviceLocationBtn');
+var focusCityBtn = document.getElementById('focusCityBtn');
+var userMarker = null;
+var geolocationOptions = {
+    enableHighAccuracy: true,
+    timeout: 12000,
+    maximumAge: 0
+};
+var exactAccuracyMeters = 1200;
+var usableAccuracyMeters = 10000;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(smap);
+
+var pin = null;
+smap.setView(defaultView, defaultZoom);
+
+function updateSubmitState() {
+    var hasCity = !!document.getElementById('citySel').value;
+    var hasName = !!document.getElementById('nameInp').value.trim();
+    var hasCoordinates = !!document.getElementById('latInp').value && !!document.getElementById('lngInp').value;
+    document.getElementById('submitPlaceBtn').disabled = !(hasCity && hasName && hasCoordinates);
+}
+
+async function readApiError(response, fallbackMessage) {
+    var err = await response.json().catch(function() { return null; });
+    if (err && err.message) return err.message;
+    if (err && err.errors) {
+        var first = Object.values(err.errors).flat().find(function(x) { return !!x; });
+        if (first) return first;
+    }
+    return fallbackMessage;
+}
+
+async function reverseGeocode(lat, lng) {
+    return window.GeoFeelLocation.reverseGeocode(lat, lng);
+}
+
+function formatAccuracy(accuracyMeters) {
+    return window.GeoFeelLocation.formatAccuracy(accuracyMeters);
+}
+
+function setGeoStatus(state, message) {
+    geoStatus.className = 'geo-assist__status';
+    if (state === 'warn') geoStatus.classList.add('geo-assist__status--warn');
+    if (state === 'error') geoStatus.classList.add('geo-assist__status--error');
+    geoStatus.textContent = message;
+}
+
+function focusSelectedCity() {
+    var o = citySelect.options[citySelect.selectedIndex];
+    if (!o) return false;
+
+    var lat = parseFloat(o.dataset.lat);
+    var lng = parseFloat(o.dataset.lng);
+    var zoom = parseInt(o.dataset.zoom) || 13;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+
+    smap.setView([lat, lng], zoom, { animate: true });
+    return true;
+}
+
+function setSelectedCity(cityId, options) {
+    return window.GeoFeelLocation.setSelectedCity(citySelect, cityId, options);
+}
+
+function syncNearestCity(lat, lng, accuracyMeters, options) {
+    return window.GeoFeelLocation.syncNearestCity(
+        citySelect,
+        cityCatalog,
+        lat,
+        lng,
+        accuracyMeters,
+        options
+    );
+}
+
+async function setUserMarker(lat, lng, label) {
+    if (userMarker) smap.removeLayer(userMarker);
+    userMarker = L.marker([lat, lng]).addTo(smap)
+        .bindPopup('📍 ' + label).openPopup();
+}
+
+async function placeSelectionPin(lat, lng, locationName) {
+    document.getElementById('latInp').value = lat.toFixed(6);
+    document.getElementById('lngInp').value = lng.toFixed(6);
+    updateSubmitState();
+
+    if (pin) smap.removeLayer(pin);
+    pin = L.marker([lat, lng], {
+        icon: L.divIcon({
+            className: '',
+            html: '<div style="width:18px;height:18px;border-radius:50%;background:#89d957;'
+                + 'border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        })
+    }).addTo(smap).bindPopup('📌 ' + (locationName || texts.selectedLocation)).openPopup();
+
+    if (!document.getElementById('addressInp').value && locationName) {
+        document.getElementById('addressInp').value = locationName;
+    }
+}
+
+function getApproximateLocationMessage(location, cityHint, userInitiated) {
+    var fallbackReason = location && location.fallbackReason;
+
+    if (!userInitiated && (location && location.needsUserActionForExact || fallbackReason === 'awaiting-consent' || fallbackReason === 'permission-unknown')) {
+        return texts.approximateNetwork + cityHint;
+    }
+
+    if (fallbackReason === 'denied') {
+        return texts.locationDenied + cityHint;
+    }
+
+    if (fallbackReason === 'insecure') {
+        return texts.locationInsecure + cityHint;
+    }
+
+    if (fallbackReason === 'unsupported') {
+        return texts.locationUnsupported + cityHint;
+    }
+
+    return texts.gpsUnavailable + cityHint;
+}
+
+async function requestDeviceLocation(useAsSelection, userInitiated) {
+    if (locating) return;
+    locating = true;
+    setGeoStatus(
+        'ok',
+        userInitiated
+            ? texts.awaitingGps
+            : texts.locatingPassive
+    );
+
+    var locationProvider = userInitiated
+        ? window.GeoFeelLocation.getBestEffortLocation
+        : window.GeoFeelLocation.getInitialLocation;
+
+    var location = await locationProvider({
+        geolocationOptions: geolocationOptions,
+        exactAccuracyMeters: exactAccuracyMeters,
+        usableAccuracyMeters: usableAccuracyMeters,
+        allowIpFallback: true
+    });
+
+    locating = false;
+
+    if (!location.ok) {
+        setGeoStatus('warn', texts.locationFailed);
+        if (!focusSelectedCity()) smap.setView(defaultView, defaultZoom);
+        if (useAsSelection) {
+            showAlert('error', texts.exactLocationFailed);
+        }
+        return;
+    }
+
+    smap.setView([location.lat, location.lng], location.source === 'ip' ? 12 : (location.isExact ? 16 : 14), { animate: true });
+    await setUserMarker(location.lat, location.lng, location.label || location.locationName || texts.currentLocation);
+
+    var nearestCity = syncNearestCity(
+        location.lat,
+        location.lng,
+        Number.isFinite(location.accuracyMeters) ? location.accuracyMeters : usableAccuracyMeters,
+        {
+            force: useAsSelection && location.source === 'gps',
+            skipCenter: true,
+            skipStatus: true,
+            maxDistanceKm: location.source === 'ip' ? 90 : undefined
+        }
+    );
+
+    var cityHint = nearestCity ? ' ' + texts.nearestCity + ' ' + nearestCity.city.name + '.' : '';
+
+    if (location.source === 'ip') {
+        setGeoStatus('warn', getApproximateLocationMessage(location, cityHint, userInitiated));
+        if (useAsSelection) {
+            showAlert('error', texts.approximatePlaceHint);
+        }
+        return;
+    }
+
+    setGeoStatus(
+        location.isExact ? 'ok' : 'warn',
+        location.isExact
+            ? texts.locationExact + ' (' + formatAccuracy(location.accuracyMeters) + '). ' + texts.canUseDirectly + cityHint
+            : texts.locationApproximate + ' (' + formatAccuracy(location.accuracyMeters) + '). ' + texts.refineByClick + cityHint
+    );
+
+    if (useAsSelection) {
+        await placeSelectionPin(location.lat, location.lng, location.locationName || texts.currentLocation);
+        if (!document.getElementById('nameInp').value && location.locationName) {
+            document.getElementById('nameInp').value = location.locationName;
+        }
+    }
+}
+
+fetch('/api/cities')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(cs) {
+        var s = document.getElementById('citySel');
+        cityCatalog = cs || [];
+        cityCatalog.forEach(function(c) {
+            var o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name;
+            o.dataset.lat = c.center ? c.center.lat : '';
+            o.dataset.lng = c.center ? c.center.lng : '';
+            o.dataset.zoom = c.zoom || 13;
+            s.appendChild(o);
+        });
+        requestDeviceLocation(false, false);
+    })
+    .catch(function() {
+        showAlert('error', texts.citiesLoadFailed);
+        requestDeviceLocation(false, false);
+    });
+
+citySelect.addEventListener('change', async function() {
+    var skipCenter = this.dataset.skipCenter === 'true';
+    var skipStatus = this.dataset.skipStatus === 'true';
+    this.dataset.skipCenter = '';
+    this.dataset.skipStatus = '';
+
+    var o = this.options[this.selectedIndex];
+    var lat = parseFloat(o.dataset.lat);
+    var lng = parseFloat(o.dataset.lng);
+    var zoom = parseInt(o.dataset.zoom) || 13;
+
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !skipCenter) {
+        smap.setView([lat, lng], zoom, { animate: true });
+    }
+
+    districtSelect.innerHTML = '<option value="">' + texts.allDistricts + '</option>';
+    updateSubmitState();
+
+    if (!this.value) {
+        setGeoStatus('warn', texts.chooseCityForCenter);
+        return;
+    }
+
+    if (!skipStatus) {
+        setGeoStatus('ok', texts.cityCenteredPlace);
+    }
+
+    try {
+        var r = await fetch('/api/districts/by-city/' + this.value);
+        if (!r.ok) return;
+        var districts = await r.json();
+        (districts || []).forEach(function(d) {
+            var opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = d.name;
+            districtSelect.appendChild(opt);
+        });
+    } catch {}
+});
+
+document.getElementById('nameInp').addEventListener('input', updateSubmitState);
+
+smap.on('click', async function(e) {
+    var locationName = await reverseGeocode(e.latlng.lat, e.latlng.lng);
+    await placeSelectionPin(e.latlng.lat, e.latlng.lng, locationName);
+    var nearestCity = syncNearestCity(e.latlng.lat, e.latlng.lng, 1, {
+        force: true,
+        skipCenter: true,
+        skipStatus: true,
+        maxDistanceKm: 60
+    });
+    setGeoStatus(
+        'ok',
+        texts.mapSelectionStatus
+        + (nearestCity ? ' ' + texts.cityAutoSet + ' ' + nearestCity.city.name + '.' : '')
+    );
+});
+
+useDeviceLocationBtn.addEventListener('click', function() {
+    requestDeviceLocation(true, true);
+});
+
+focusCityBtn.addEventListener('click', function() {
+    if (!citySelect.value) {
+        setGeoStatus('warn', texts.chooseCityFirst);
+        return;
+    }
+
+    focusSelectedCity();
+    setGeoStatus('ok', texts.cityCentered);
+});
+
+document.getElementById('suggestPlaceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    var body = {
+        cityId: document.getElementById('citySel').value,
+        districtId: document.getElementById('districtSel').value || null,
+        name: document.getElementById('nameInp').value.trim(),
+        type: parseInt(document.getElementById('typeSel').value),
+        lat: parseFloat(document.getElementById('latInp').value),
+        lng: parseFloat(document.getElementById('lngInp').value),
+        address: document.getElementById('addressInp').value || null,
+        description: document.getElementById('descriptionInp').value || null
+    };
+
+    if (!body.cityId) { showAlert('error', texts.chooseCityValidation); return; }
+    if (!body.name) { showAlert('error', texts.choosePlaceNameValidation); return; }
+    if (!Number.isFinite(body.lat) || !Number.isFinite(body.lng)) {
+        showAlert('error', texts.choosePointValidation);
+        return;
+    }
+
+    var btn = document.getElementById('submitPlaceBtn');
+    btn.disabled = true;
+    btn.textContent = texts.sending;
+
+    try {
+        var r = await fetch('/api/places/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (r.ok) {
+            var data = await r.json().catch(function() { return null; });
+            showAlert('ok', data && data.message ? data.message : texts.sentSuccess);
+            document.getElementById('suggestPlaceForm').reset();
+            document.getElementById('latInp').value = '';
+            document.getElementById('lngInp').value = '';
+            document.getElementById('districtSel').innerHTML = '<option value="">' + texts.allDistricts + '</option>';
+            if (pin) {
+                smap.removeLayer(pin);
+                pin = null;
+            }
+        } else if (r.status === 401) {
+            showAlert('error', texts.loginRequired);
+        } else {
+            showAlert('error', await readApiError(r, texts.submitFailed));
+        }
+    } catch {
+        showAlert('error', texts.networkError);
+    } finally {
+        btn.textContent = texts.submitButton;
+        updateSubmitState();
+    }
+});
+
+function showAlert(type, message) {
+    document.getElementById('alertBox').innerHTML =
+        '<div class="em-alert em-alert-' + type + '">' + message + '</div>';
+    if (type === 'ok') {
+        setTimeout(function() {
+            document.getElementById('alertBox').innerHTML = '';
+        }, 4000);
+    }
+}
+</script>
+}

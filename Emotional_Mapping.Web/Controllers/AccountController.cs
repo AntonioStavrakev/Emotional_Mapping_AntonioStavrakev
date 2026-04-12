@@ -1,11 +1,19 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Emotional_Mapping.Web.Models;
+using Emotional_Mapping.Web.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace Emotional_Mapping.Web.Controllers;
 
@@ -13,11 +21,22 @@ public class AccountController : Controller
 {
     private readonly IHttpClientFactory _http;
     private readonly IConfiguration _configuration;
+    private readonly IContactEmailService _emailService;
+    private readonly IAuthenticationSchemeProvider _schemes;
+    private readonly IUserOnboardingService _onboarding;
 
-    public AccountController(IHttpClientFactory http, IConfiguration configuration)
+    public AccountController(
+        IHttpClientFactory http,
+        IConfiguration configuration,
+        IContactEmailService emailService,
+        IAuthenticationSchemeProvider schemes,
+        IUserOnboardingService onboarding)
     {
         _http = http;
         _configuration = configuration;
+        _emailService = emailService;
+        _schemes = schemes;
+        _onboarding = onboarding;
     }
 
     [HttpGet]
@@ -130,6 +149,10 @@ public class AccountController : Controller
             string.IsNullOrWhiteSpace(model.DisplayName) ? model.Email : model.DisplayName!,
             new List<string> { "User" });
 
+        await _onboarding.HandleNewRegistrationAsync(
+            model.Email,
+            string.IsNullOrWhiteSpace(model.DisplayName) ? model.Email : model.DisplayName!);
+
         return RedirectToAction("Index", "Home");
     }
 
@@ -147,11 +170,210 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Home");
     }
 
+    // ===== FORGOT PASSWORD =====
+
+    [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        return View(new ForgotPasswordViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var client = _http.CreateClient("api");
+
+        var payload = JsonSerializer.Serialize(new { email = model.Email });
+        var response = await client.PostAsync(
+            "/api/auth/forgot-password",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            var raw = await response.Content.ReadAsStringAsync();
+            try
+            {
+                using var doc = JsonDocument.Parse(raw);
+                if (doc.RootElement.TryGetProperty("token", out var tokenProp) &&
+                    doc.RootElement.TryGetProperty("email", out var emailProp))
+                {
+                    var token = tokenProp.GetString() ?? "";
+                    var email = emailProp.GetString() ?? model.Email;
+
+                    // Build reset link
+                    var resetLink = Url.Action("ResetPassword", "Account",
+                        new { email = email, token = token },
+                        protocol: Request.Scheme)!;
+
+                    // Send email
+                    try
+                    {
+                        var htmlBody = $@"
+<div style=""font-family:'DM Sans',sans-serif;max-width:560px;margin:0 auto;padding:32px;background:#f6f8f3;border-radius:18px;"">
+  <h1 style=""color:#4a8c1c;font-size:2rem;margin-bottom:8px;"">GEOFEEL</h1>
+  <h2 style=""color:#233127;font-size:1.3rem;"">Смяна на парола</h2>
+  <p style=""color:#66725f;"">Получихме заявка за смяна на паролата на твоя GEOFEEL профил.</p>
+  <p style=""color:#66725f;"">Кликни върху бутона по-долу, за да зададеш нова парола. Линкът е валиден 24 часа.</p>
+  <div style=""text-align:center;margin:32px 0;"">
+    <a href=""{resetLink}"" style=""background:linear-gradient(90deg,#89d957,#c9e265);color:#233127;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:1rem;"">
+      🔑 Смяна на парола
+    </a>
+  </div>
+  <p style=""color:#8e9888;font-size:.85rem;"">Ако не си поискал(а) смяна на паролата, просто игнорирай този имейл.</p>
+  <hr style=""border:none;border-top:1px solid #e8f0e0;margin:24px 0;""/>
+  <p style=""color:#8e9888;font-size:.8rem;"">© 2026 GEOFEEL — Emotional Mapping</p>
+</div>";
+
+                        await _emailService.SendSystemEmailAsync(email, "Смяна на парола — GEOFEEL", htmlBody);
+                    }
+                    catch
+                    {
+                        // If email fails, still show a success message (don't leak info)
+                    }
+                }
+            }
+            catch { }
+        }
+
+        // Always show success to prevent email enumeration
+        TempData["Success"] = "Ако имейлът е регистриран, ще получиш линк за смяна на парола.";
+        return RedirectToAction("ForgotPasswordConfirmation");
+    }
+
+    [HttpGet]
+    public IActionResult ForgotPasswordConfirmation()
+    {
+        return View();
+    }
+
+    // ===== RESET PASSWORD =====
+
+    [HttpGet]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            TempData["Error"] = "Невалиден линк за смяна на парола.";
+            return RedirectToAction("Login");
+        }
+
+        return View(new ResetPasswordViewModel
+        {
+            Email = email,
+            Token = token
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var client = _http.CreateClient("api");
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            email = model.Email,
+            token = model.Token,
+            newPassword = model.NewPassword
+        });
+
+        var response = await client.PostAsync(
+            "/api/auth/reset-password",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "Паролата е сменена успешно. Можеш да влезеш с новата парола.";
+            return RedirectToAction("Login");
+        }
+
+        var raw = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var doc = JsonDocument.Parse(raw);
+            if (doc.RootElement.TryGetProperty("message", out var msg))
+                ViewBag.Error = msg.GetString();
+            else
+                ViewBag.Error = "Грешка при смяна на паролата.";
+        }
+        catch
+        {
+            ViewBag.Error = "Грешка при смяна на паролата.";
+        }
+
+        return View(model);
+    }
+
+    // ===== CHANGE PASSWORD (logged in) =====
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View(new ChangePasswordViewModel());
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var client = _http.CreateClient("api");
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            currentPassword = model.CurrentPassword,
+            newPassword = model.NewPassword
+        });
+
+        var response = await client.PostAsync(
+            "/api/auth/change-password",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "Паролата е сменена успешно.";
+            return RedirectToAction("ChangePassword");
+        }
+
+        var raw = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var doc = JsonDocument.Parse(raw);
+            if (doc.RootElement.TryGetProperty("message", out var msg))
+                ViewBag.Error = msg.GetString();
+            else
+                ViewBag.Error = "Грешка при смяна на паролата.";
+        }
+        catch
+        {
+            ViewBag.Error = "Грешка при смяна на паролата.";
+        }
+
+        return View(model);
+    }
+
     // ===== GOOGLE LOGIN =====
 
     [HttpGet]
-    public IActionResult GoogleLogin(string? returnUrl = null)
+    public async Task<IActionResult> GoogleLogin(string? returnUrl = null)
     {
+        if (await _schemes.GetSchemeAsync("Google") is null)
+        {
+            TempData["Error"] = "Google входът още не е конфигуриран.";
+            return RedirectToAction(nameof(Login));
+        }
+
         var redirectUrl = Url.Action(nameof(GoogleCallback), "Account", new
         {
             returnUrl = returnUrl ?? "/"
@@ -204,8 +426,14 @@ public class AccountController : Controller
     // ===== APPLE LOGIN =====
 
     [HttpGet]
-    public IActionResult AppleLogin(string? returnUrl = null)
+    public async Task<IActionResult> AppleLogin(string? returnUrl = null)
     {
+        if (await _schemes.GetSchemeAsync("Apple") is null)
+        {
+            TempData["Error"] = "Apple входът още не е конфигуриран.";
+            return RedirectToAction(nameof(Login));
+        }
+
         var redirectUrl = Url.Action(nameof(AppleCallback), "Account", new
         {
             returnUrl = returnUrl ?? "/"
@@ -268,9 +496,10 @@ public class AccountController : Controller
             "/api/auth/register",
             new StringContent(payload, Encoding.UTF8, "application/json"));
 
-        // Ако user вече съществува, просто продължаваме.
-        // Не хвърляме грешка нарочно.
-        _ = response;
+        if (response.IsSuccessStatusCode)
+        {
+            await _onboarding.HandleNewRegistrationAsync(email, displayName);
+        }
     }
 
     private async Task SignInWebCookie(string email, string displayName, List<string> roles)

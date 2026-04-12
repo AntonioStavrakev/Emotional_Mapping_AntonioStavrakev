@@ -22,6 +22,55 @@ namespace Emotional_Mapping.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Emotional_Mapping.Domain.Entities.AiCreditPack", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PackageCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTime>("PurchasedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RemainingCredits")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("StripeSessionId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("TotalCredits")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("StripeSessionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AiCreditPacks");
+                });
+
             modelBuilder.Entity("Emotional_Mapping.Domain.Entities.City", b =>
                 {
                     b.Property<Guid>("Id")
@@ -111,7 +160,7 @@ namespace Emotional_Mapping.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("DistrictId")
+                    b.Property<Guid?>("DistrictId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Downvotes")
@@ -274,9 +323,6 @@ namespace Emotional_Mapping.Infrastructure.Migrations
                     b.Property<Guid>("GeneratedMapId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("GeneratedMapId1")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("MatchReasonsJson")
                         .HasColumnType("text");
 
@@ -293,8 +339,6 @@ namespace Emotional_Mapping.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GeneratedMapId");
-
-                    b.HasIndex("GeneratedMapId1");
 
                     b.HasIndex("PlaceId");
 
@@ -381,9 +425,6 @@ namespace Emotional_Mapping.Infrastructure.Migrations
                     b.Property<Guid>("CityId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CityId1")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -443,8 +484,6 @@ namespace Emotional_Mapping.Infrastructure.Migrations
                         .HasColumnType("character varying(500)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CityId1");
 
                     b.HasIndex("DistrictId");
 
@@ -776,9 +815,7 @@ namespace Emotional_Mapping.Infrastructure.Migrations
 
                     b.HasOne("Emotional_Mapping.Domain.Entities.District", "District")
                         .WithMany()
-                        .HasForeignKey("DistrictId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DistrictId");
 
                     b.HasOne("Emotional_Mapping.Domain.Entities.Place", "Place")
                         .WithMany()
@@ -846,14 +883,10 @@ namespace Emotional_Mapping.Infrastructure.Migrations
             modelBuilder.Entity("Emotional_Mapping.Domain.Entities.MapRecommendation", b =>
                 {
                     b.HasOne("Emotional_Mapping.Domain.Entities.GeneratedMap", "GeneratedMap")
-                        .WithMany()
+                        .WithMany("Recommendations")
                         .HasForeignKey("GeneratedMapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Emotional_Mapping.Domain.Entities.GeneratedMap", null)
-                        .WithMany("Recommendations")
-                        .HasForeignKey("GeneratedMapId1");
 
                     b.HasOne("Emotional_Mapping.Domain.Entities.Place", "Place")
                         .WithMany()
@@ -886,14 +919,10 @@ namespace Emotional_Mapping.Infrastructure.Migrations
             modelBuilder.Entity("Emotional_Mapping.Domain.Entities.Place", b =>
                 {
                     b.HasOne("Emotional_Mapping.Domain.Entities.City", "City")
-                        .WithMany()
+                        .WithMany("Places")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Emotional_Mapping.Domain.Entities.City", null)
-                        .WithMany("Places")
-                        .HasForeignKey("CityId1");
 
                     b.HasOne("Emotional_Mapping.Domain.Entities.District", "District")
                         .WithMany()

@@ -13,10 +13,23 @@ public class CitiesController : ControllerBase
     {
         _cities = cities;
     }
+    
 
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
-        return Ok(await _cities.GetAllAsync(ct));
+        var cities = await _cities.GetAllAsync(ct);
+
+        return Ok(cities.Select(c => new
+        {
+            id = c.Id,
+            name = c.Name,
+            center = new
+            {
+                lat = c.Center.Lat,
+                lng = c.Center.Lng
+            },
+            zoom = c.DefaultZoom
+        }));
     }
 }

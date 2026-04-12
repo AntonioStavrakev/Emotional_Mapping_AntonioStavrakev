@@ -1,5 +1,7 @@
 using Emotional_Mapping.Application.DTOs;
 using Emotional_Mapping.Application.Interfaces.Repositories;
+using Emotional_Mapping.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Emotional_Mapping.Api.Controllers;
@@ -9,10 +11,12 @@ namespace Emotional_Mapping.Api.Controllers;
 public class PlacesController : ControllerBase
 {
     private readonly IPlaceRepository _places;
+    private readonly PlaceSuggestionService _suggestions;
 
-    public PlacesController(IPlaceRepository places)
+    public PlacesController(IPlaceRepository places, PlaceSuggestionService suggestions)
     {
         _places = places;
+        _suggestions = suggestions;
     }
 
     [HttpGet("similar/{placeId:guid}")]
@@ -35,4 +39,13 @@ public class PlacesController : ControllerBase
 
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpPost("suggest")]
+    public async Task<IActionResult> Suggest([FromBody] SuggestPlaceDto dto, CancellationToken ct)
+        => Ok(new
+        {
+            id = await _suggestions.SuggestAsync(dto, ct),
+            message = "Предложението за място е изпратено за преглед."
+        });
 }

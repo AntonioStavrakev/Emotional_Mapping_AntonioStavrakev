@@ -13,5 +13,7 @@ public interface IMapRepository
     Task<int> CountRequestsByCityAsync(Guid cityId, CancellationToken ct);
     Task<GeneratedMap?> GetBySlugAsync(string slug, CancellationToken ct);
     Task<int> CountRequestsForUserTodayAsync(string currentUserUserId, DateTime todayStart, DateTime todayEnd, CancellationToken ct);
+    Task<int> CountGeneratedMapsBetweenAsync(DateTime fromUtc, DateTime toUtc, CancellationToken ct);
     Task<List<MapRequest>> GetAllAsync(CancellationToken ct);
+    Task SaveChangesAsync(CancellationToken ct);
 }

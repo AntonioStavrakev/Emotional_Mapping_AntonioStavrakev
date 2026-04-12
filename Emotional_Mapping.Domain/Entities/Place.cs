@@ -99,6 +99,7 @@ public class Place
 
     public void Approve() => IsApproved = true;
     public void Reject() => IsApproved = false;
+    public void AssignDistrict(Guid? districtId) => DistrictId = districtId;
 
     private static int? ClampNullable(int? v, int min, int max)
         => v is null ? null : Math.Clamp(v.Value, min, max);

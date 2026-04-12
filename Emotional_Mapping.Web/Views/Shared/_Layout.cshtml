@@ -1,4 +1,7 @@
-﻿@* <!DOCTYPE html> *@
+﻿@using System.Globalization
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+@* <!DOCTYPE html> *@
 @* <html lang="en"> *@
 @* <head> *@
 @*     <meta charset="utf-8"/> *@
@@ -50,20 +53,40 @@
 @* </html> *@
 
 @{
-    var displayName = User?.Identity?.Name ?? "Профил";
+    var displayName = User?.Identity?.Name ?? T["Account.Profile"];
     var firstLetter = string.IsNullOrWhiteSpace(displayName) ? "G" : displayName.Substring(0, 1).ToUpper();
+    var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+    var isPremium = User?.IsInRole("SuperUser") == true || User?.IsInRole("Admin") == true;
+    var currentPathAndQuery = $"{Context.Request.Path}{Context.Request.QueryString}";
+    var currentPath = Context.Request.Path;
+    var isHomePage = currentPath == "/";
+    var isMapPage = currentPath == "/Map";
+    var isGeneratePage = currentPath.StartsWithSegments("/Map/Generate");
+    var isStatsPage = currentPath.StartsWithSegments("/Stats");
+    var isMyMapsPage = currentPath.StartsWithSegments("/Map/MyMaps");
+    var isAddPointPage = currentPath.StartsWithSegments("/Map/AddPlace");
+    var isSuggestPlacePage = currentPath.StartsWithSegments("/Map/SuggestPlace");
+    var isContactPage = currentPath.StartsWithSegments("/Contact");
+    var isAdminPage = currentPath.StartsWithSegments("/Admin");
+}
+
+@functions {
+    IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
 }
 
 <!DOCTYPE html>
-<html lang="bg">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - GEOFEEL</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png" asp-append-version="true" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/apple-touch-icon.png" asp-append-version="true" />
+    <link rel="shortcut icon" href="~/favicon-32x32.png" asp-append-version="true" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -77,27 +100,103 @@
             </a>
 
             <div class="em-nav-pro__center">
-                <a href="/" class="em-nav-pro__link">Начало</a>
-                <a href="/Map" class="em-nav-pro__link">Карта</a>
-                <a href="/Map/Generate" class="em-nav-pro__link">Генерирай карта</a>
-                <a href="/Stats" class="em-nav-pro__link">Статистики</a>
+                <a href="/"
+                   class="em-nav-ico@(isHomePage ? " is-active" : "")"
+                   data-tip="@T["Nav.Home"]"
+                   aria-label="@T["Nav.Home"]"
+                   aria-current="@(isHomePage ? "page" : null)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span class="em-nav-ico__label">@T["Nav.Home"]</span>
+                </a>
+                <a href="/Map"
+                   class="em-nav-ico@(isMapPage ? " is-active" : "")"
+                   data-tip="@T["Nav.Map"]"
+                   aria-label="@T["Nav.Map"]"
+                   aria-current="@(isMapPage ? "page" : null)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                    <span class="em-nav-ico__label">@T["Nav.Map"]</span>
+                </a>
+                <a href="/Map/Generate"
+                   class="em-nav-ico@(isGeneratePage ? " is-active" : "")"
+                   data-tip="@T["Nav.Generate"]"
+                   aria-label="@T["Nav.Generate"]"
+                   aria-current="@(isGeneratePage ? "page" : null)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/></svg>
+                    <span class="em-nav-ico__label">@T["Nav.Generate"]</span>
+                </a>
+                <a href="/Stats"
+                   class="em-nav-ico@(isStatsPage ? " is-active" : "")"
+                   data-tip="@T["Nav.Stats"]"
+                   aria-label="@T["Nav.Stats"]"
+                   aria-current="@(isStatsPage ? "page" : null)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span class="em-nav-ico__label">@T["Nav.Stats"]</span>
+                </a>
 
-                @if (User.Identity?.IsAuthenticated == true)
+                @if (isAuthenticated)
                 {
-                    <a href="/Map/MyMaps" class="em-nav-pro__link">Моите карти</a>
-                    <a href="/Map/AddPlace" class="em-nav-pro__link">Добави място</a>
+                    <a href="/Map/MyMaps"
+                       class="em-nav-ico@(isMyMapsPage ? " is-active" : "")"
+                       data-tip="@T["Nav.MyMaps"]"
+                       aria-label="@T["Nav.MyMaps"]"
+                       aria-current="@(isMyMapsPage ? "page" : null)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                        <span class="em-nav-ico__label">@T["Nav.MyMaps"]</span>
+                    </a>
+                    <a href="/Map/AddPlace"
+                       class="em-nav-ico@(isAddPointPage ? " is-active" : "")"
+                       data-tip="@T["Nav.AddPoint"]"
+                       aria-label="@T["Nav.AddPoint"]"
+                       aria-current="@(isAddPointPage ? "page" : null)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span class="em-nav-ico__label">@T["Nav.AddPoint"]</span>
+                    </a>
+                    <a href="/Map/SuggestPlace"
+                       class="em-nav-ico@(isSuggestPlacePage ? " is-active" : "")"
+                       data-tip="@T["Nav.SuggestPlace"]"
+                       aria-label="@T["Nav.SuggestPlace"]"
+                       aria-current="@(isSuggestPlacePage ? "page" : null)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
+                        <span class="em-nav-ico__label">@T["Nav.SuggestPlace"]</span>
+                    </a>
                 }
 
-                <a href="/Contact" class="em-nav-pro__link">Контакт</a>
+                <a href="/Contact"
+                   class="em-nav-ico@(isContactPage ? " is-active" : "")"
+                   data-tip="@T["Nav.Contact"]"
+                   aria-label="@T["Nav.Contact"]"
+                   aria-current="@(isContactPage ? "page" : null)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <span class="em-nav-ico__label">@T["Nav.Contact"]</span>
+                </a>
 
-                @if (User.IsInRole("Admin"))
+                @if (User?.IsInRole("Admin") == true)
                 {
-                    <a href="/Admin" class="em-nav-pro__link em-nav-pro__link--admin">Админ</a>
+                    <a href="/Admin"
+                       class="em-nav-ico em-nav-ico--admin@(isAdminPage ? " is-active" : "")"
+                       data-tip="@T["Nav.Admin"]"
+                       aria-label="@T["Nav.Admin"]"
+                       aria-current="@(isAdminPage ? "page" : null)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                        <span class="em-nav-ico__label">@T["Nav.Admin"]</span>
+                    </a>
                 }
             </div>
 
             <div class="em-nav-pro__right">
-                @if (User.Identity?.IsAuthenticated == true)
+                <details class="em-lang">
+                    <summary class="em-lang__summary">
+                        <span class="em-lang__label">@T["Lang.Label"]</span>
+                        <span class="em-lang__value">@T.CurrentLanguage</span>
+                    </summary>
+
+                    <div class="em-lang__menu">
+                        <a class="em-lang__item" href="/Language/Set?culture=bg-BG&returnUrl=@Uri.EscapeDataString(currentPathAndQuery)">@T["Lang.Bg"]</a>
+                        <a class="em-lang__item" href="/Language/Set?culture=en-US&returnUrl=@Uri.EscapeDataString(currentPathAndQuery)">@T["Lang.En"]</a>
+                    </div>
+                </details>
+
+                @if (isAuthenticated)
                 {
                     <details class="em-account">
                         <summary class="em-account__summary">
@@ -109,27 +208,45 @@
                         <div class="em-account__menu">
                             <div class="em-account__menu-head">
                                 <div class="em-account__menu-name">@displayName</div>
-                                @if (User.IsInRole("SuperUser"))
+                                @if (isPremium)
                                 {
-                                    <span class="em-badge em-badge-super">SuperUser</span>
+                                    <span class="em-badge em-badge-super">@T["Account.Premium"]</span>
                                 }
                             </div>
 
-                            <a href="/Map/MyMaps" class="em-account__item">Моите карти</a>
-                            <a href="/Map/Generate" class="em-account__item">Нова карта</a>
-                            <a href="/Contact" class="em-account__item">Контакт</a>
+                            <div class="em-quota-card" id="aiQuotaPill" aria-label="@T.Pick("Дневен AI лимит", "Daily AI quota")">
+                                <span class="em-quota-ring" id="aiQuotaRing" style="--quota-progress: 0deg;">
+                                    <span class="em-quota-ring__dot"></span>
+                                </span>
+                                <span class="em-quota-copy">
+                                    <span class="em-quota-copy__label" id="aiQuotaTitle">@T.Pick("AI заявки", "AI requests")</span>
+                                    <span class="em-quota-copy__value" id="aiQuotaValue">— / —</span>
+                                </span>
+                            </div>
+
+                            @if (!isPremium)
+                            {
+                                <a href="/#plans" class="em-quota-upgrade em-quota-upgrade--menu">@T.Pick("Надгради до Premium", "Upgrade to Premium")</a>
+                            }
+
+                            <a href="/Map/MyMaps" class="em-account__item">@T["Nav.MyMaps"]</a>
+                            <a href="/Map/Generate" class="em-account__item">@T["Account.NewMap"]</a>
+                            <a href="/Map/AddPlace" class="em-account__item">@T["Nav.AddPoint"]</a>
+                            <a href="/Map/SuggestPlace" class="em-account__item">@T["Nav.SuggestPlace"]</a>
+                            <a href="/Account/ChangePassword" class="em-account__item">@T["Account.ChangePassword"]</a>
+                            <a href="/Contact" class="em-account__item">@T["Nav.Contact"]</a>
 
                             <form method="post" action="/Account/Logout" class="em-account__form">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="em-account__logout">Изход</button>
+                                <button type="submit" class="em-account__logout">@T["Account.Logout"]</button>
                             </form>
                         </div>
                     </details>
                 }
                 else
                 {
-                    <a href="/Account/Login" class="btn-em btn-em-ghost btn-em-sm">Вход</a>
-                    <a href="/Account/Register" class="btn-em btn-em-primary btn-em-sm">Регистрация</a>
+                    <a href="/Account/Login" class="btn-em btn-em-ghost btn-em-sm">@T["Auth.Login"]</a>
+                    <a href="/Account/Register" class="btn-em btn-em-primary btn-em-sm">@T["Auth.Register"]</a>
                 }
             </div>
         </nav>
@@ -140,16 +257,90 @@
     </main>
 
     <footer class="em-footer">
-        <span>&copy; 2026 GEOFEEL — Emotional Mapping</span>
+        <span>&copy; 2026 GEOFEEL — @T.Pick("Емоционално картографиране", "Emotional mapping")</span>
         <div class="em-footer__links">
-            <a href="/Privacy">Поверителност</a>
-            <a href="/Contact">Контакт</a>
+            <a href="/Privacy">@T["Footer.Privacy"]</a>
+            <a href="/Contact">@T["Nav.Contact"]</a>
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (isAuthenticated)
+    {
+        <script>
+            (function () {
+                const pill = document.getElementById('aiQuotaPill');
+                const ring = document.getElementById('aiQuotaRing');
+                const title = document.getElementById('aiQuotaTitle');
+                const value = document.getElementById('aiQuotaValue');
+
+                if (!pill || !ring || !title || !value) return;
+
+                function paintQuota(data) {
+                    const used = Number(data?.usedToday ?? 0);
+                    const limit = Math.max(1, Number(data?.dailyLimit ?? 0));
+                    const remaining = Math.max(0, Number(data?.remainingToday ?? (limit - used)));
+                    const extraCredits = Math.max(0, Number(data?.extraCreditsRemaining ?? 0));
+                    const nextResetAtUtc = data?.nextResetAtUtc ? new Date(data.nextResetAtUtc) : null;
+                    const extraExpiresAtUtc = data?.extraCreditsExpireAtUtc ? new Date(data.extraCreditsExpireAtUtc) : null;
+                    const progress = Math.round(Math.min(1, Math.max(0, used / limit)) * 360);
+                    const isPremium = Boolean(data?.isPremium);
+                    const isEnglish = @T.IsEnglish.ToString().ToLowerInvariant();
+
+                    pill.classList.toggle('is-premium', isPremium);
+                    pill.classList.toggle('is-low', !isPremium && remaining <= 2);
+                    pill.classList.toggle('is-empty', !isPremium && remaining === 0 && extraCredits === 0);
+
+                    ring.style.setProperty('--quota-progress', `${progress}deg`);
+                    title.textContent = isPremium ? @Js(T.Pick("Premium AI", "Premium AI")) : @Js(T.Pick("Безплатен AI", "Free AI"));
+
+                    if (remaining === 0 && extraCredits === 0) {
+                        value.textContent = isEnglish
+                            ? `0 daily • resets tomorrow`
+                            : `0 днес • рестарт утре`;
+                        return;
+                    }
+
+                    if (extraCredits > 0) {
+                        const extraExpiryLabel = extraExpiresAtUtc
+                            ? extraExpiresAtUtc.toLocaleDateString(document.documentElement.lang || 'bg-BG')
+                            : '—';
+                        value.textContent = isEnglish
+                            ? `${remaining} daily • +${extraCredits} extra until ${extraExpiryLabel}`
+                            : `${remaining} днес • +${extraCredits} пакет до ${extraExpiryLabel}`;
+                        return;
+                    }
+
+                    if (remaining === 0 && nextResetAtUtc) {
+                        const resetLabel = nextResetAtUtc.toLocaleDateString(document.documentElement.lang || 'bg-BG');
+                        value.textContent = isEnglish
+                            ? `0 daily • resets ${resetLabel}`
+                            : `0 днес • рестарт ${resetLabel}`;
+                        return;
+                    }
+
+                    value.textContent = isEnglish
+                        ? `${remaining} left • ${used}/${limit}`
+                        : `${remaining} остават • ${used}/${limit}`;
+                }
+
+                fetch('/api/maps/quota', { headers: { 'Accept': 'application/json' } })
+                    .then(async response => {
+                        if (!response.ok) return null;
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data) paintQuota(data);
+                    })
+                    .catch(() => {
+                        title.textContent = @Js(T.Pick("AI заявки", "AI requests"));
+                        value.textContent = '— / —';
+                    });
+            })();
+        </script>
+    }
     @RenderSection("Scripts", required: false)
 </body>
 </html>

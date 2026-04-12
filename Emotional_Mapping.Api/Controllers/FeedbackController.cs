@@ -16,7 +16,7 @@ public class FeedbackController : ControllerBase
         _service = service;
     }
     
-    [Authorize]
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> Add([FromBody] FeedbackDto dto, CancellationToken ct)
     {

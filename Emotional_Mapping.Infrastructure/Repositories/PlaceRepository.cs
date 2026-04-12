@@ -17,7 +17,13 @@ public class PlaceRepository : IPlaceRepository
     
     public async Task<List<Place>> GetByCityAsync(Guid cityId, Guid? districtId, PlaceType? type, CancellationToken ct)
     {
-        var q = _db.Places.AsQueryable().Where(x => x.CityId == cityId && x.IsApproved);
+        var q = _db.Places
+            .Include(x => x.District)
+            .AsQueryable()
+            .Where(x => x.IsApproved);
+
+        if (cityId != Guid.Empty)
+            q = q.Where(x => x.CityId == cityId);
 
         if (districtId is not null) q = q.Where(x => x.DistrictId == districtId);
         if (type is not null) q = q.Where(x => x.Type == type);
@@ -28,5 +34,10 @@ public class PlaceRepository : IPlaceRepository
     public Task<Place?> GetAsync(Guid id, CancellationToken ct)
     {
         return _db.Places.FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
+
+    public Task AddAsync(Place place, CancellationToken ct)
+    {
+        return _db.Places.AddAsync(place, ct).AsTask();
     }
 }

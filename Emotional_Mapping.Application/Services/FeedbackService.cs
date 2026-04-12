@@ -20,11 +20,12 @@ public class FeedbackService
 
     public async Task AddAsync(FeedbackDto dto, CancellationToken ct)
     {
-        if (!_user.IsAuthenticated || string.IsNullOrWhiteSpace(_user.UserId))
-            throw new InvalidOperationException("Трябва да си влязъл в профила си.");
+        var userId = _user.IsAuthenticated && !string.IsNullOrWhiteSpace(_user.UserId)
+            ? _user.UserId!
+            : "guest";
 
         var fb = new Feedback(
-            userId: _user.UserId!,
+            userId: userId,
             generatedMapId: dto.GeneratedMapId,
             recommendationId: dto.RecommendationId,
             rating: dto.Rating,

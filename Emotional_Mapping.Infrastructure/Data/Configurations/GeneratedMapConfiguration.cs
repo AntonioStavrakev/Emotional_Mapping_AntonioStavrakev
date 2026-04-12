@@ -16,5 +16,6 @@ public class GeneratedMapConfiguration : IEntityTypeConfiguration<GeneratedMap>
         b.Navigation(x => x.Recommendations).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         b.HasOne(x => x.MapRequest).WithMany().HasForeignKey(x => x.MapRequestId);
+        b.HasMany(x => x.Recommendations).WithOne(x => x.GeneratedMap).HasForeignKey(x => x.GeneratedMapId);
     }
 }

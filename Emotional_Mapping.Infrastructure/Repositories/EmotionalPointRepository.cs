@@ -27,7 +27,14 @@ public class EmotionalPointRepository : IEmotionalPointRepository
 
     public async Task<List<EmotionalPoint>> GetByCityAsync(Guid cityId, EmotionType? emotion, CancellationToken ct)
     {
-        var q = _db.EmotionalPoints.AsQueryable().Where(x => x.CityId == cityId && x.IsApproved);
+        var q = _db.EmotionalPoints
+            .Include(x => x.District)
+            .AsQueryable()
+            .Where(x => x.IsApproved);
+
+        if (cityId != Guid.Empty)
+            q = q.Where(x => x.CityId == cityId);
+
         if (emotion is not null) q = q.Where(x => x.Emotion == emotion);
         return await q.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(ct);
     }

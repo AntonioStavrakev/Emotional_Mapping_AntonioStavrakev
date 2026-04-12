@@ -1,4 +1,5 @@
 using Emotional_Mapping.Application.DTOs;
+using Emotional_Mapping.Domain.Enums;
 using FluentValidation;
 
 namespace Emotional_Mapping.Application.Validation;
@@ -8,6 +9,11 @@ public class AddEmotionalPointDtoValidator : AbstractValidator<AddEmotionalPoint
     public AddEmotionalPointDtoValidator()
     {
         RuleFor(x => x.CityId).NotEmpty().WithMessage("Моля, избери град.");
+
+        RuleFor(x => x.Emotion)
+            .NotNull().WithMessage("Моля, избери емоция.")
+            .Must(x => x is not null && Enum.IsDefined(typeof(EmotionType), x.Value))
+            .WithMessage("Избраната емоция е невалидна.");
 
         RuleFor(x => x.Lat).InclusiveBetween(-90, 90).WithMessage("Невалидна ширина (Lat).");
         RuleFor(x => x.Lng).InclusiveBetween(-180, 180).WithMessage("Невалидна дължина (Lng).");

@@ -1,21 +1,11 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
 @using Emotional_Mapping.Domain.Enums
 
 @functions {
-    string EmotionLabel(EmotionType e) => e switch
-    {
-        EmotionType.Calm => "Спокойствие",
-        EmotionType.Joy => "Радост",
-        EmotionType.Nostalgia => "Носталгия",
-        EmotionType.Tension => "Напрежение",
-        EmotionType.Inspiration => "Вдъхновение",
-        EmotionType.Energetic => "Енергично",
-        EmotionType.Romantic => "Романтика",
-        EmotionType.Social => "Социално",
-        EmotionType.Relaxed => "Релакс",
-        EmotionType.Safe => "Сигурност",
-        EmotionType.Excited => "Еуфория",
-        _ => e.ToString()
-    };
+    IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+
+    string EmotionLabel(EmotionType e) => T.EmotionLabel(e);
 
     string EmotionIcon(EmotionType e) => e switch
     {
@@ -27,15 +17,22 @@
         EmotionType.Energetic => "⚡",
         EmotionType.Romantic => "💗",
         EmotionType.Social => "👥",
+        EmotionType.Happy => "😄",
+        EmotionType.Sad => "😢",
+        EmotionType.Anxiety => "😰",
         EmotionType.Relaxed => "🌿",
+        EmotionType.Angry => "😠",
+        EmotionType.Bored => "😐",
         EmotionType.Safe => "🛡️",
+        EmotionType.Unsafe => "⚠️",
         EmotionType.Excited => "🎉",
-        _ => "•"
+        EmotionType.Lonely => "🌙",
+        _ => "💭"
     };
 }
 
 @{
-    ViewData["Title"] = "Генерирай карта";
+    ViewData["Title"] = T["Nav.Generate"];
     var allEmotions = Enum.GetValues<EmotionType>().ToList();
 }
 
@@ -44,33 +41,60 @@
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">Генерирай карта</h1>
-    <p class="em-page-sub">Избери град, настроение и тип места. GEOFEEL ще генерира карта чрез AI.</p>
+    <span class="em-page-header__icon">🗺️</span>
+    <div class="em-page-header__badge">✦ @T.Pick("AI Генератор", "AI Generator")</div>
+    <h1 class="em-page-title">@T.Pick("Генерирай емоционална карта", "Generate an emotional map")</h1>
+    <p class="em-page-sub">@T.Pick("Избери град и настроение — AI ще анализира и генерира персонална карта с препоръки за теб.", "Choose a city and mood and AI will analyze it and generate a personalized map with recommendations for you.")</p>
 </div>
 
 <div id="alertBox"></div>
 
+<div class="premium-limit-modal" id="premiumLimitModal" aria-hidden="true">
+    <div class="premium-limit-modal__card">
+        <div class="premium-limit-modal__eyebrow">@T.Pick("Premium лимит", "Premium limit")</div>
+        <h2 class="premium-limit-modal__title">@T.Pick("Достигна дневния лимит", "You reached the daily limit")</h2>
+        <p class="premium-limit-modal__text" id="premiumLimitText">
+            @T.Pick("За повече AI генерации активирай Premium.", "Activate Premium for more AI generations.")
+        </p>
+        <div class="premium-limit-modal__actions">
+            <button type="button" class="btn-em btn-em-primary" id="buyBundleBtn" onclick="buyBundleCredits()">
+                @T.Pick("Купи 10 заявки за €0.20", "Buy 10 requests for €0.20")
+            </button>
+            <a href="/#plans" class="btn-em btn-em-primary">@T.Pick("Виж Premium плана", "View the Premium plan")</a>
+            <button type="button" class="btn-em btn-em-ghost" onclick="closePremiumLimitModal()">@T.Pick("Затвори", "Close")</button>
+        </div>
+    </div>
+</div>
+
 <div class="gen-grid fade-up fade-up-1">
     <div class="gen-form">
-        <h2 class="gen-form__title">Параметри</h2>
+        <h2 class="gen-form__title">@T.Pick("Параметри", "Parameters")</h2>
+
+        <div class="geo-assist">
+            <div id="geoStatus" class="geo-assist__status">@T.Pick("Засичаме текущата ти локация. При hotspot точността може да е по-ниска.", "We are detecting your current location. On a hotspot, accuracy may be lower.")</div>
+            <div class="geo-assist__actions">
+                <button type="button" class="btn-em btn-em-secondary" id="geoLocateBtn">@T.Pick("Използвай текущата ми локация", "Use my current location")</button>
+                <button type="button" class="btn-em btn-em-secondary" id="geoCityBtn">@T.Pick("Центрирай по избрания град", "Center on the selected city")</button>
+            </div>
+        </div>
 
         <form id="genForm">
             <div class="em-form-group">
-                <label class="em-label">Град</label>
+                <label class="em-label">@T.Pick("Град", "City")</label>
                 <select class="em-select" id="citySelect" required>
-                    <option value="">— Избери град —</option>
+                    <option value="">— @T.Pick("Избери град", "Select a city") —</option>
                 </select>
             </div>
 
             <div class="em-form-group">
-                <label class="em-label">Район</label>
+                <label class="em-label">@T.Pick("Район", "District") <span class="em-label__optional">@T.Pick("по избор", "optional")</span></label>
                 <select class="em-select" id="districtSel">
-                    <option value="">Всички райони</option>
+                    <option value="">@T.Pick("Всички райони", "All districts")</option>
                 </select>
             </div>
 
             <div class="em-form-group">
-                <label class="em-label">Настроение</label>
+                <label class="em-label">@T.Pick("Настроение", "Mood")</label>
                 <div class="emotion-chip-grid">
                     @foreach (var emotion in allEmotions)
                     {
@@ -84,12 +108,12 @@
             </div>
 
             <div class="em-form-group">
-                <label class="em-label">Опиши настроението си</label>
-                <textarea class="em-textarea" id="userNote" rows="4" placeholder="Например: искам тихи, спокойни места за разходка и вдъхновение..."></textarea>
+                <label class="em-label">@T.Pick("Опиши настроението си", "Describe your mood")</label>
+                <textarea class="em-textarea" id="userNote" rows="4" placeholder="@T.Pick("Например: искам тихи, спокойни места за разходка и вдъхновение...", "For example: I want quiet, calming places for a walk and inspiration...")"></textarea>
             </div>
 
-            <button type="submit" class="btn-em btn-em-primary btn-em-lg" style="width:100%;justify-content:center;">
-                Генерирай с AI
+            <button type="submit" id="generateMapBtn" class="btn-em btn-em-primary btn-em-lg" style="width:100%;justify-content:center;">
+                @T.Pick("Генерирай с AI", "Generate with AI")
             </button>
         </form>
     </div>
@@ -98,7 +122,7 @@
         <div id="prevMap" style="width:100%;height:560px;"></div>
         <div class="spin-ov" id="spinOver">
             <div class="spinner"></div>
-            <p>AI анализира настроението ти...</p>
+            <p>@T.Pick("AI анализира настроението ти...", "AI is analyzing your mood...")</p>
         </div>
     </div>
 </div>
@@ -106,50 +130,289 @@
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const pmap = L.map('prevMap').setView([42.6977, 23.3219], 7);
+const texts = {
+    useCurrentLocation: @Js(T.Pick("Използвай текущата ми локация", "Use my current location")),
+    generating: @Js(T.Pick("Генериране...", "Generating...")),
+    generateWithAi: @Js(T.Pick("Генерирай с AI", "Generate with AI")),
+    locatingPrompt: @Js(T.Pick("Искаме точната ти GPS локация. Ако браузърът пита за разрешение, потвърди заявката.", "We need your precise GPS location. If the browser asks for permission, confirm it.")),
+    locatingPassive: @Js(T.Pick("Опитваме да разпознаем местоположението ти. За точен GPS можеш да ползваш бутона по-долу.", "We are trying to detect your location. For precise GPS, use the button below.")),
+    approximateNetwork: @Js(T.Pick("Показваме приблизителна локация по мрежа. Натисни „Използвай текущата ми локация“, за да разрешиш точната GPS локация.", "We are showing an approximate network location. Press \"Use my current location\" to allow precise GPS access.")),
+    locationDenied: @Js(T.Pick("Браузърът в момента не разрешава точната ти локация. Разреши я от иконата до адреса и опитай отново.", "The browser is not allowing your precise location right now. Allow it from the address bar icon and try again.")),
+    locationInsecure: @Js(T.Pick("Точната локация работи само през защитена връзка (https или localhost), затова използвахме приблизителна по мрежа.", "Precise location only works over a secure connection (https or localhost), so we used an approximate network location.")),
+    locationUnsupported: @Js(T.Pick("Този браузър не поддържа точна геолокация, затова използвахме приблизителна по мрежа.", "This browser does not support precise geolocation, so we used an approximate network location.")),
+    gpsUnavailable: @Js(T.Pick("Не успяхме да вземем точна GPS локация, затова използвахме приблизителна по мрежа.", "We could not get a precise GPS location, so we used an approximate network location.")),
+    locationFailed: @Js(T.Pick("Не успяхме да определим локацията ти. Избери град ръчно и ще центрираме картата по него.", "We could not determine your location. Choose a city manually and we will center the map on it.")),
+    currentLocation: @Js(T.Pick("Текуща локация", "Current location")),
+    cityRecognized: @Js(T.Pick("Разпознахме най-близкия град:", "We detected the nearest city:")),
+    locationExact: @Js(T.Pick("Локацията е засечена точно", "Your location was detected precisely")),
+    locationApproximate: @Js(T.Pick("Локацията е приблизителна", "Your location is approximate")),
+    wrongCityHint: @Js(T.Pick("Ако виждаш грешен град, избери го ръчно и използвай картата по него.", "If the city looks wrong, select it manually and use the map centered on it.")),
+    chooseCityForCenter: @Js(T.Pick("Избери град, за да работим с точен център на картата.", "Choose a city so we can use an accurate map center.")),
+    centeredByCity: @Js(T.Pick("Картата е центрирана по", "The map is centered on")),
+    retryLocation: @Js(T.Pick("Ако искаш, можеш пак да пробваш с текущата си локация.", "If you want, you can try again with your current location.")),
+    selectCityFirst: @Js(T.Pick("Първо избери град, за да центрираме картата по него.", "Select a city first so we can center the map on it.")),
+    centeredSelectedCity: @Js(T.Pick("Картата е центрирана по избрания град.", "The map is centered on the selected city.")),
+    allDistricts: @Js(T.Pick("Всички райони", "All districts")),
+    selectCityValidation: @Js(T.Pick("Моля, избери град.", "Please select a city.")),
+    selectMoodValidation: @Js(T.Pick("Въведи настроение или избери емоция.", "Enter a mood or choose an emotion.")),
+    loginRequired: @Js(T.Pick("Трябва да влезеш в профила си.", "You need to sign in to your account.")),
+    generateError: @Js(T.Pick("Грешка при генерирането.", "Generation failed.")),
+    networkError: @Js(T.Pick("Мрежова грешка.", "Network error.")),
+    buyBundle: @Js(T.Pick("Купи 10 заявки за €0.20", "Buy 10 requests for €0.20")),
+    buyingBundle: @Js(T.Pick("Пренасочване към плащане...", "Redirecting to payment...")),
+    bundleCheckoutFailed: @Js(T.Pick("Неуспешно стартиране на плащането за пакета.", "Failed to start checkout for the bundle.")),
+    bundlePriceHint: @Js(T.Pick("Пакетът е валиден 5 дни от покупката.", "The bundle is valid for 5 days from purchase."))
+};
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+const pmap = L.map('prevMap');
+const defaultView = [42.7339, 25.4858];
+const defaultZoom = 7;
+const citySelect = document.getElementById('citySelect');
+const districtSelect = document.getElementById('districtSel');
+const geoStatus = document.getElementById('geoStatus');
+const geoLocateBtn = document.getElementById('geoLocateBtn');
+const geoCityBtn = document.getElementById('geoCityBtn');
+const generateMapBtn = document.getElementById('generateMapBtn');
+let userMarker = null;
+let cityCatalog = [];
+let locating = false;
+let isGeneratingMap = false;
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
     maxZoom: 19
 }).addTo(pmap);
+pmap.setView(defaultView, defaultZoom);
+
+const geolocationOptions = {
+    enableHighAccuracy: true,
+    timeout: 12000,
+    maximumAge: 0
+};
+
+const exactAccuracyMeters = 1200;
+const usableAccuracyMeters = 10000;
+
+async function readApiError(response, fallbackMessage) {
+    const err = await response.json().catch(() => null);
+    if (err?.message) return err.message;
+    if (err?.errors) {
+        const first = Object.values(err.errors).flat().find(Boolean);
+        if (first) return first;
+    }
+    return fallbackMessage;
+}
+
+async function reverseGeocode(lat, lng) {
+    return window.GeoFeelLocation.reverseGeocode(lat, lng);
+}
+
+function formatAccuracy(accuracyMeters) {
+    return window.GeoFeelLocation.formatAccuracy(accuracyMeters);
+}
+
+function setGeoStatus(state, message) {
+    geoStatus.className = 'geo-assist__status';
+    if (state === 'warn') geoStatus.classList.add('geo-assist__status--warn');
+    if (state === 'error') geoStatus.classList.add('geo-assist__status--error');
+    geoStatus.textContent = message;
+}
+
+function focusSelectedCity() {
+    const opt = citySelect.options[citySelect.selectedIndex];
+    if (!opt) return false;
+
+    const lat = parseFloat(opt.dataset.lat);
+    const lng = parseFloat(opt.dataset.lng);
+    const zoom = parseInt(opt.dataset.zoom) || 13;
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+
+    pmap.setView([lat, lng], zoom, { animate: true });
+    return true;
+}
+
+function setSelectedCity(cityId, options) {
+    return window.GeoFeelLocation.setSelectedCity(citySelect, cityId, options);
+}
+
+function syncNearestCity(lat, lng, accuracyMeters, options) {
+    return window.GeoFeelLocation.syncNearestCity(
+        citySelect,
+        cityCatalog,
+        lat,
+        lng,
+        accuracyMeters,
+        options
+    );
+}
+
+async function setUserLocationMarker(lat, lng, label) {
+    if (userMarker) {
+        pmap.removeLayer(userMarker);
+    }
+
+    userMarker = L.marker([lat, lng])
+        .addTo(pmap)
+        .bindPopup(`📍 ${label}`)
+        .openPopup();
+}
+
+function getApproximateLocationMessage(location, cityHint, userInitiated) {
+    const fallbackReason = location?.fallbackReason;
+
+    if (!userInitiated && (location?.needsUserActionForExact || fallbackReason === 'awaiting-consent' || fallbackReason === 'permission-unknown')) {
+        return texts.approximateNetwork + cityHint;
+    }
+
+    if (fallbackReason === 'denied') {
+        return texts.locationDenied + cityHint;
+    }
+
+    if (fallbackReason === 'insecure') {
+        return texts.locationInsecure + cityHint;
+    }
+
+    if (fallbackReason === 'unsupported') {
+        return texts.locationUnsupported + cityHint;
+    }
+
+    return texts.gpsUnavailable + cityHint;
+}
+
+async function requestDeviceLocation(userInitiated) {
+    if (locating) return;
+    locating = true;
+    setGeoStatus(
+        'ok',
+        userInitiated
+            ? texts.locatingPrompt
+            : texts.locatingPassive
+    );
+
+    const locationProvider = userInitiated
+        ? window.GeoFeelLocation.getBestEffortLocation
+        : window.GeoFeelLocation.getInitialLocation;
+
+    const location = await locationProvider({
+        geolocationOptions: geolocationOptions,
+        exactAccuracyMeters: exactAccuracyMeters,
+        usableAccuracyMeters: usableAccuracyMeters,
+        allowIpFallback: true
+    });
+
+    locating = false;
+
+    if (!location.ok) {
+        setGeoStatus('warn', texts.locationFailed);
+        if (!focusSelectedCity()) {
+            pmap.setView(defaultView, defaultZoom);
+        }
+        return;
+    }
+
+    const fallbackZoom = location.source === 'ip' ? 12 : (location.isExact ? 16 : 14);
+    pmap.setView([location.lat, location.lng], fallbackZoom, { animate: true });
+    await setUserLocationMarker(location.lat, location.lng, location.label || location.locationName || texts.currentLocation);
+
+    const nearestCity = syncNearestCity(
+        location.lat,
+        location.lng,
+        Number.isFinite(location.accuracyMeters) ? location.accuracyMeters : usableAccuracyMeters,
+        {
+            skipCenter: true,
+            skipStatus: true,
+            maxDistanceKm: location.source === 'ip' ? 90 : undefined
+        }
+    );
+
+    const cityHint = nearestCity ? ` ${texts.cityRecognized} ${nearestCity.city.name}.` : '';
+
+    if (location.source === 'ip') {
+        setGeoStatus('warn', getApproximateLocationMessage(location, cityHint, userInitiated));
+        return;
+    }
+
+    setGeoStatus(
+        location.isExact ? 'ok' : 'warn',
+        location.isExact
+            ? `${texts.locationExact} (${formatAccuracy(location.accuracyMeters)}).` + cityHint
+            : `${texts.locationApproximate} (${formatAccuracy(location.accuracyMeters)}). ${texts.wrongCityHint}` + cityHint
+    );
+}
 
 fetch('/api/cities')
     .then(r => r.ok ? r.json() : [])
     .then(cs => {
-        const s = document.getElementById('citySelect');
-        (cs || []).forEach(c => {
+        cityCatalog = cs || [];
+
+        cityCatalog.forEach(c => {
             const o = document.createElement('option');
             o.value = c.id;
             o.textContent = c.name;
-            o.dataset.lat = c.center?.lat ?? c.latitude ?? c.lat ?? '';
-            o.dataset.lng = c.center?.lng ?? c.longitude ?? c.lng ?? '';
-            s.appendChild(o);
+            o.dataset.lat = c.center?.lat ?? '';
+            o.dataset.lng = c.center?.lng ?? '';
+            o.dataset.zoom = c.zoom ?? 12;
+            citySelect.appendChild(o);
         });
+        requestDeviceLocation(false);
+    })
+    .catch(() => {
+        requestDeviceLocation(false);
     });
 
-document.getElementById('citySelect').addEventListener('change', async function () {
-    const o = this.options[this.selectedIndex];
+citySelect.addEventListener('change', async function () {
+    const skipCenter = this.dataset.skipCenter === 'true';
+    const skipStatus = this.dataset.skipStatus === 'true';
+    this.dataset.skipCenter = '';
+    this.dataset.skipStatus = '';
 
-    if (o.dataset.lat && o.dataset.lng) {
-        pmap.setView([+o.dataset.lat, +o.dataset.lng], 13, { animate: true });
+    const opt = this.options[this.selectedIndex];
+    const lat = parseFloat(opt.dataset.lat);
+    const lng = parseFloat(opt.dataset.lng);
+    const zoom = parseInt(opt.dataset.zoom) || 13;
+
+    if (Number.isFinite(lat) && Number.isFinite(lng) && !skipCenter) {
+        pmap.setView([lat, lng], zoom, { animate: true });
     }
 
-    const districtSelect = document.getElementById('districtSel');
-    districtSelect.innerHTML = '<option value="">Всички райони</option>';
+    districtSelect.innerHTML = `<option value="">${texts.allDistricts}</option>`;
 
-    if (!this.value) return;
+    if (!this.value) {
+        setGeoStatus('warn', texts.chooseCityForCenter);
+        return;
+    }
+
+    if (!skipStatus) {
+        setGeoStatus('ok', `${texts.centeredByCity} ${opt.textContent}. ${texts.retryLocation}`);
+    }
 
     try {
         const r = await fetch('/api/districts/by-city/' + this.value);
+        if (!r.ok) return;
         const districts = await r.json();
 
         (districts || []).forEach(d => {
-            const opt = document.createElement('option');
-            opt.value = d.id;
-            opt.textContent = d.name;
-            districtSelect.appendChild(opt);
+            const districtOption = document.createElement('option');
+            districtOption.value = d.id;
+            districtOption.textContent = d.name;
+            districtSelect.appendChild(districtOption);
         });
     } catch {}
+});
+
+geoLocateBtn.addEventListener('click', function () {
+    requestDeviceLocation(true);
+});
+
+geoCityBtn.addEventListener('click', function () {
+    if (!citySelect.value) {
+        setGeoStatus('warn', texts.selectCityFirst);
+        return;
+    }
+
+    focusSelectedCity();
+    setGeoStatus('ok', texts.centeredSelectedCity);
 });
 
 document.querySelectorAll('.echip').forEach(chip => {
@@ -160,28 +423,44 @@ document.querySelectorAll('.echip').forEach(chip => {
     });
 });
 
+function setGenerateButtonBusy(isBusy) {
+    isGeneratingMap = isBusy;
+    generateMapBtn.disabled = isBusy;
+    generateMapBtn.textContent = isBusy ? texts.generating : texts.generateWithAi;
+}
+
 document.getElementById('genForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const spin = document.getElementById('spinOver');
-    spin.classList.add('on');
-    document.getElementById('alertBox').innerHTML = '';
+    if (isGeneratingMap) return;
 
     const selectedEmotion = document.querySelector('input[name="emotion"]:checked');
-
     const body = {
-        cityId: document.getElementById('citySelect').value,
-        districtId: document.getElementById('districtSel').value || null,
+        cityId: citySelect.value,
+        districtId: districtSelect.value || null,
         selectedEmotion: selectedEmotion ? parseInt(selectedEmotion.value) : null,
         queryText: document.getElementById('userNote').value || null,
-        radiusMeters: 3000
+        radiusMeters: 3000,
+        language: document.documentElement.lang && document.documentElement.lang.toLowerCase().startsWith('en')
+            ? 'en'
+            : 'bg'
     };
 
     if (!body.cityId) {
-        spin.classList.remove('on');
-        showAlert('error', 'Моля, избери град.');
+        showAlert('error', texts.selectCityValidation);
         return;
     }
+
+    if (!body.selectedEmotion && !String(body.queryText || '').trim()) {
+        showAlert('error', texts.selectMoodValidation);
+        return;
+    }
+
+    const spin = document.getElementById('spinOver');
+    let keepBusyState = false;
+    setGenerateButtonBusy(true);
+    spin.classList.add('on');
+    document.getElementById('alertBox').innerHTML = '';
 
     try {
         const r = await fetch('/api/maps/generate', {
@@ -190,20 +469,32 @@ document.getElementById('genForm').addEventListener('submit', async function (e)
             body: JSON.stringify(body)
         });
 
-        spin.classList.remove('on');
-
         if (r.ok) {
             const d = await r.json();
-            window.location.href = '/Map/Result?mapId=' + d.id;
+            keepBusyState = true;
+            window.location.href = '/Map/Result?mapId=' + d.generatedMapId;
+            return;
         } else if (r.status === 401) {
-            showAlert('error', 'Трябва да влезеш в профила си.');
+            showAlert('error', texts.loginRequired);
         } else {
-            const err = await r.json().catch(() => ({}));
-            showAlert('error', err.message || 'Грешка при генерирането.');
+            const message = await readApiError(r, texts.generateError);
+            const normalizedMessage = message.toLowerCase();
+            if (normalizedMessage.includes('дневният лимит')
+                || normalizedMessage.includes('дневния лимит')
+                || normalizedMessage.includes('daily limit')) {
+                openPremiumLimitModal(message);
+                return;
+            }
+
+            showAlert('error', message);
         }
     } catch {
-        spin.classList.remove('on');
-        showAlert('error', 'Мрежова грешка.');
+        showAlert('error', texts.networkError);
+    } finally {
+        if (!keepBusyState) {
+            spin.classList.remove('on');
+            setGenerateButtonBusy(false);
+        }
     }
 });
 
@@ -214,5 +505,60 @@ function showAlert(type, message) {
     document.getElementById('alertBox').innerHTML =
         `<div class="em-alert ${cls}">${message}</div>`;
 }
+
+function openPremiumLimitModal(message) {
+    const modal = document.getElementById('premiumLimitModal');
+    const text = document.getElementById('premiumLimitText');
+    text.textContent = message ? `${message} ${texts.bundlePriceHint}` : texts.bundlePriceHint;
+    modal.classList.add('on');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closePremiumLimitModal() {
+    const modal = document.getElementById('premiumLimitModal');
+    modal.classList.remove('on');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+async function buyBundleCredits() {
+    const button = document.getElementById('buyBundleBtn');
+    if (!button) return;
+
+    const previousText = button.textContent;
+    button.disabled = true;
+    button.textContent = texts.buyingBundle;
+
+    try {
+        const response = await fetch('/api/payments/create-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productType: 'bundle10' })
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+            showAlert('error', data?.message || texts.bundleCheckoutFailed);
+            return;
+        }
+
+        if (data?.url) {
+            window.location.href = data.url;
+            return;
+        }
+
+        showAlert('error', texts.bundleCheckoutFailed);
+    } catch {
+        showAlert('error', texts.bundleCheckoutFailed);
+    } finally {
+        button.disabled = false;
+        button.textContent = previousText || texts.buyBundle;
+    }
+}
+
+document.getElementById('premiumLimitModal').addEventListener('click', function (e) {
+    if (e.target === this) {
+        closePremiumLimitModal();
+    }
+});
 </script>
 }

@@ -36,7 +36,7 @@ public class StripePaymentService
                         UnitAmount = 20, // 0.20€
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
-                            Name = "SuperUser Upgrade"
+                            Name = "GEOFEEL Premium"
                         }
                     },
                     Quantity = 1

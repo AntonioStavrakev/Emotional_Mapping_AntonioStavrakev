@@ -1,15 +1,15 @@
 @model Emotional_Mapping.Web.Models.ErrorViewModel
 @{
-    ViewData["Title"] = "Грешка";
+    ViewData["Title"] = T.Pick("Грешка", "Error");
 }
 
 <div style="text-align:center;padding:5rem 2rem;" class="fade-up">
     <div style="font-size:4rem;margin-bottom:1.5rem;">&#9888;</div>
     <h1 style="font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;letter-spacing:-.03em;margin-bottom:.75rem;">
-        Нещо се обърка
+        @T.Pick("Нещо се обърка", "Something went wrong")
     </h1>
     <p style="color:#6b7080;margin-bottom:2rem;font-size:.95rem;">
-        Съжаляваме. Опитай пак или се върни към началото.
+        @T.Pick("Съжаляваме. Опитай пак или се върни към началото.", "Sorry about that. Try again or go back to the home page.")
     </p>
     @if (Model?.ShowRequestId == true)
     {
@@ -21,7 +21,7 @@
         </p>
     }
     <div style="display:flex;gap:1rem;justify-content:center;">
-        <a href="/"                         class="btn-em btn-em-primary">&#8592; Към начало</a>
-        <a href="javascript:history.back()" class="btn-em btn-em-ghost">Назад</a>
+        <a href="/"                         class="btn-em btn-em-primary">&#8592; @T.Pick("Към начало", "Home")</a>
+        <a href="javascript:history.back()" class="btn-em btn-em-ghost">@T.Pick("Назад", "Back")</a>
     </div>
 </div>

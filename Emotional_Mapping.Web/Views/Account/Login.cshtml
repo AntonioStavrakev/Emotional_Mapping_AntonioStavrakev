@@ -1,13 +1,13 @@
 @model Emotional_Mapping.Web.Models.LoginViewModel
 
 @{
-    ViewData["Title"] = "Вход";
+    ViewData["Title"] = T["Auth.Login"];
 }
 
 <div class="auth-wrap fade-up">
     <div class="auth-card">
-        <h1 class="auth-title">Вход в GEOFEEL</h1>
-        <p class="auth-sub">Влез в профила си, за да генерираш карти, да пазиш история и да използваш premium функции.</p>
+        <h1 class="auth-title">@T["Auth.LoginTitle"]</h1>
+        <p class="auth-sub">@T["Auth.LoginSub"]</p>
 
         @if (ViewBag.Error != null)
         {
@@ -18,41 +18,83 @@
             @Html.AntiForgeryToken()
 
             <div class="em-form-group">
-                <label asp-for="Email" class="em-label">Имейл</label>
+                <label asp-for="Email" class="em-label">@T["Auth.Email"]</label>
                 <input asp-for="Email" class="em-input" placeholder="name@example.com" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
             <div class="em-form-group">
-                <label asp-for="Password" class="em-label">Парола</label>
-                <input asp-for="Password" type="password" class="em-input" placeholder="••••••••" />
+                <label asp-for="Password" class="em-label">@T["Auth.Password"]</label>
+                <div class="password-field">
+                    <input asp-for="Password" type="password" class="em-input password-field__input" placeholder="••••••••" />
+                    <button type="button" class="password-toggle" data-toggle-password aria-label="@T.Pick("Покажи паролата", "Show password")" aria-pressed="false">
+                        @T.Pick("Покажи", "Show")
+                    </button>
+                </div>
                 <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
-            <button type="submit" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
-                Вход
+            <button type="submit" class="btn-em btn-em-primary auth-submit" style="width:100%;justify-content:center;">
+                @T["Auth.Login"]
             </button>
+
+            <div style="text-align:right;margin-top:8px;">
+                <a href="/Account/ForgotPassword" style="font-size:.88rem;color:var(--muted);text-decoration:underline;">
+                    @T["Auth.ForgotPassword"]
+                </a>
+            </div>
             @if (TempData["Error"] != null)
             {
                 <div class="em-alert em-alert-error">@TempData["Error"]</div>
             }
 
-            <div style="margin-top:18px; display:grid; gap:10px;">
-                <a href="/Account/GoogleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
-                    Вход с Google
+            <div class="auth-divider"><span>@T["Auth.OrContinue"]</span></div>
+
+            <div class="auth-social-grid">
+                <a href="/Account/GoogleLogin" class="auth-social-btn auth-social-btn--google">
+                    <span class="auth-social-btn__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M21.8 12.23c0-.78-.07-1.53-.2-2.23H12v4.23h5.49a4.7 4.7 0 0 1-2.04 3.09v2.56h3.3c1.94-1.79 3.05-4.43 3.05-7.65Z" fill="#4285F4"/><path d="M12 22c2.76 0 5.08-.91 6.77-2.47l-3.3-2.56c-.91.61-2.08.98-3.47.98-2.67 0-4.93-1.8-5.74-4.23H2.86v2.65A10 10 0 0 0 12 22Z" fill="#34A853"/><path d="M6.26 13.72A5.98 5.98 0 0 1 5.94 12c0-.6.11-1.17.32-1.72V7.63H2.86A10 10 0 0 0 2 12c0 1.61.39 3.13 1.08 4.47l3.18-2.75Z" fill="#FBBC05"/><path d="M12 6.05c1.5 0 2.84.52 3.9 1.53l2.92-2.92C17.07 2.93 14.76 2 12 2 8.08 2 4.7 4.24 2.86 7.63l3.4 2.65c.81-2.43 3.07-4.23 5.74-4.23Z" fill="#EA4335"/></svg>
+                    </span>
+                    <span>@T["Auth.Google"]</span>
                 </a>
-                <a href="/Account/AppleLogin" class="btn-em btn-em-ghost" style="width:100%;justify-content:center;">
-                    Вход с Apple
+                @* Apple login is temporarily hidden until Apple Developer credentials are available.
+                <a href="/Account/AppleLogin" class="auth-social-btn auth-social-btn--apple">
+                    <span class="auth-social-btn__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.37 1.43c.06.85-.23 1.69-.77 2.35-.6.74-1.56 1.3-2.41 1.23-.11-.83.27-1.72.79-2.31.58-.67 1.59-1.16 2.39-1.27ZM19.5 17.12c-.53 1.23-.78 1.78-1.47 2.9-.96 1.57-2.31 3.52-4 3.54-1.51.02-1.9-.98-3.95-.97-2.04.01-2.47.99-3.98.97-1.68-.02-2.96-1.78-3.92-3.35-2.69-4.38-2.97-9.52-1.31-12.08 1.18-1.82 3.04-2.88 4.78-2.88 1.78 0 2.9.98 4.36.98 1.42 0 2.29-.98 4.35-.98 1.55 0 3.19.85 4.36 2.32-3.84 2.11-3.22 7.58.78 9.55Z"/></svg>
+                    </span>
+                    <span>@T["Auth.Apple"]</span>
                 </a>
+                *@
             </div>
         </form>
 
         <div class="auth-footer">
-            Нямаш профил? <a href="/Account/Register">Регистрация</a>
+            @T["Auth.NoAccount"] <a href="/Account/Register">@T["Auth.Register"]</a>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const loginPasswordTexts = {
+            show: '@T.Pick("Покажи", "Show")',
+            hide: '@T.Pick("Скрий", "Hide")',
+            showAria: '@T.Pick("Покажи паролата", "Show password")',
+            hideAria: '@T.Pick("Скрий паролата", "Hide password")'
+        };
+
+        document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var field = this.parentElement.querySelector('input');
+                if (!field) return;
+
+                var isVisible = field.type === 'text';
+                field.type = isVisible ? 'password' : 'text';
+                this.textContent = isVisible ? loginPasswordTexts.show : loginPasswordTexts.hide;
+                this.setAttribute('aria-pressed', String(!isVisible));
+                this.setAttribute('aria-label', isVisible ? loginPasswordTexts.showAria : loginPasswordTexts.hideAria);
+            });
+        });
+    </script>
 }

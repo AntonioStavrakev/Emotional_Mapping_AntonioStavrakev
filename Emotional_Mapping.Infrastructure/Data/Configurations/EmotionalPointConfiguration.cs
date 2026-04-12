@@ -23,5 +23,6 @@ public class EmotionalPointConfiguration : IEntityTypeConfiguration<EmotionalPoi
 
         b.HasOne(x => x.City).WithMany().HasForeignKey(x => x.CityId);
         b.HasOne(x => x.Place).WithMany().HasForeignKey(x => x.PlaceId);
+        b.HasOne(x => x.District).WithMany().HasForeignKey(x => x.DistrictId).IsRequired(false);
     }
 }

@@ -1,0 +1,58 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+
+@functions {
+    IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
+
+@{
+    ViewData["Title"] = T.Pick("Плащането е успешно", "Payment successful");
+    var sessionId = ViewBag.SessionId as string;
+}
+
+<div class="em-page-header fade-up">
+    <span class="em-page-header__icon">✓</span>
+    <div class="em-page-header__badge">@T.Pick("Плащане", "Payment")</div>
+    <h1 class="em-page-title">@T.Pick("Плащането е успешно", "Payment successful")</h1>
+    <p class="em-page-sub">@T.Pick("Потвърждаваме Stripe сесията и активираме покупката към профила ти.", "We're confirming the Stripe session and applying the purchase to your account.")</p>
+</div>
+
+<div id="paymentStatus" class="em-card fade-up fade-up-1">
+    @T.Pick("Потвърждаване на плащането...", "Confirming payment...")
+</div>
+
+<div class="fade-up fade-up-2" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="/Map/Generate" class="btn-em btn-em-primary">@T.Pick("Към AI генератора", "Go to AI generator")</a>
+    <a href="/Home" class="btn-em btn-em-ghost">@T.Pick("Към началото", "Go to home")</a>
+</div>
+
+@section Scripts {
+<script>
+const sessionId = @Js(sessionId ?? "");
+const statusBox = document.getElementById('paymentStatus');
+
+async function confirmPayment() {
+    if (!sessionId) {
+        statusBox.innerHTML = `<div class="em-alert em-alert-warn">${@Js(T.Pick("Плащането мина, но липсва Stripe sessionId за автоматично потвърждение.", "The payment succeeded, but the Stripe sessionId is missing for automatic confirmation."))}</div>`;
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/payments/confirm-session?sessionId=' + encodeURIComponent(sessionId), {
+            method: 'POST'
+        });
+
+        const data = await response.json().catch(() => null);
+        const message = data?.message || (response.ok
+            ? @Js(T.Pick("Покупката е активирана.", "The purchase is now active."))
+            : @Js(T.Pick("Неуспешно потвърждение на Stripe сесията.", "Failed to confirm the Stripe session.")));
+
+        statusBox.innerHTML = `<div class="em-alert ${response.ok ? 'em-alert-ok' : 'em-alert-error'}">${message}</div>`;
+    } catch {
+        statusBox.innerHTML = `<div class="em-alert em-alert-error">${@Js(T.Pick("Мрежова грешка при потвърждаване на плащането.", "Network error while confirming the payment."))}</div>`;
+    }
+}
+
+confirmPayment();
+</script>
+}

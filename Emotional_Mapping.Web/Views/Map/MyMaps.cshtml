@@ -1,10 +1,19 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+
+@functions {
+IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
+
 @{
-ViewData["Title"] = "Моите карти";
+ViewData["Title"] = T["Nav.MyMaps"];
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">Моите карти</h1>
-    <p class="em-page-sub">История на генерираните от теб емоционални карти.</p>
+    <span class="em-page-header__icon">🗃️</span>
+    <div class="em-page-header__badge">📁 @T.Pick("Моята колекция", "My collection")</div>
+    <h1 class="em-page-title">@T.Pick("Моите емоционални карти", "My emotional maps")</h1>
+    <p class="em-page-sub">@T.Pick("Всички карти, които си генерирал — запази спомените си на картата.", "All maps you have generated, saved in one place.")</p>
 </div>
 
 <div id="mapsGrid" class="maps-grid fade-up fade-up-1"></div>
@@ -12,11 +21,20 @@ ViewData["Title"] = "Моите карти";
 @section Scripts {
 <script>
     const grid = document.getElementById('mapsGrid');
+    const texts = {
+        signIn: @Js(T.Pick("Влез в профила си", "Sign in to your account")),
+        noMaps: @Js(T.Pick("Още нямаш запазени карти", "You do not have saved maps yet")),
+        firstMap: @Js(T.Pick("Генерирай първата си карта", "Generate your first map")),
+        mapFallback: @Js(T.Pick("Карта", "Map")),
+        noDescription: @Js(T.Pick("Няма описание.", "No description.")),
+        confidence: @Js(T.Pick("Увереност", "Confidence")),
+        open: @Js(T.Pick("Отвори", "Open"))
+    };
 
     fetch('/api/maps/mine')
         .then(async r => {
             if (r.status === 401) {
-                grid.innerHTML = '<div class="empty"><div class="empty__icon">🔒</div><div class="empty__title">Влез в профила си</div></div>';
+                grid.innerHTML = `<div class="empty"><div class="empty__icon">🔒</div><div class="empty__title">${texts.signIn}</div></div>`;
                 return [];
             }
             return r.ok ? await r.json() : [];
@@ -26,8 +44,8 @@ ViewData["Title"] = "Моите карти";
                 grid.innerHTML = `
                 <div class="empty">
                     <div class="empty__icon">🗺️</div>
-                    <div class="empty__title">Още нямаш запазени карти</div>
-                    <a href="/Map/Generate" class="btn-em btn-em-primary">Генерирай първата си карта</a>
+                    <div class="empty__title">${texts.noMaps}</div>
+                    <a href="/Map/Generate" class="btn-em btn-em-primary">${texts.firstMap}</a>
                 </div>`;
                 return;
             }
@@ -35,17 +53,17 @@ ViewData["Title"] = "Моите карти";
             grid.innerHTML = items.map(m => `
             <a class="mcard" href="/Map/Result?mapId=${m.id}">
                 <div class="mcard__hdr">
-                    <div class="mcard__title">${m.title ?? 'Карта'}</div>
-                    <span class="em-badge em-badge-super">${m.dominantEmotion ?? '—'}</span>
+                    <div class="mcard__title">${m.title ?? texts.mapFallback}</div>
+                    <span class="em-badge em-badge-super">${toBgEmotion(m.dominantEmotion) ?? '—'}</span>
                 </div>
-                <div class="mcard__summ">${m.summary ?? 'Няма описание.'}</div>
+                <div class="mcard__summ">${m.summary ?? texts.noDescription}</div>
                 <div>
-                    <small class="text-muted">Confidence</small>
+                    <small class="text-muted">${texts.confidence}</small>
                     <div class="cbar"><div class="cbar__fill" style="width:${Math.round((m.confidence ?? 0) * 100)}%"></div></div>
                 </div>
                 <div class="mcard__foot">
                     <small>${formatDate(m.generatedAtUtc)}</small>
-                    <span class="btn-em btn-em-ghost btn-em-sm">Отвори</span>
+                    <span class="btn-em btn-em-ghost btn-em-sm">${texts.open}</span>
                 </div>
             </a>
         `).join('');
@@ -53,7 +71,7 @@ ViewData["Title"] = "Моите карти";
 
     function formatDate(v) {
         if (!v) return '';
-        return new Date(v).toLocaleString('bg-BG');
+        return new Date(v).toLocaleString(document.documentElement.lang || 'bg-BG');
     }
 </script>
 }

@@ -12,7 +12,6 @@ public class MapRecommendationConfiguration : IEntityTypeConfiguration<MapRecomm
         b.Property(x => x.MatchReasonsJson).HasColumnType("text");
         b.Property(x => x.BestTimeToVisit).HasMaxLength(50);
 
-        b.HasOne(x => x.GeneratedMap).WithMany().HasForeignKey(x => x.GeneratedMapId);
         b.HasOne(x => x.Place).WithMany().HasForeignKey(x => x.PlaceId);
     }
 }

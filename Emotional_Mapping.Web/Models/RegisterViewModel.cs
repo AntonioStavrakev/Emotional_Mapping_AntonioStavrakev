@@ -12,6 +12,8 @@ public class RegisterViewModel
 
     [Required(ErrorMessage = "Полето е задължително")]
     [MinLength(6, ErrorMessage = "Минимум 6 символа")]
+    [RegularExpression(@"^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$",
+        ErrorMessage = "Паролата трябва да има поне 6 символа, 1 главна буква, 1 цифра и 1 специален символ")]
     public string Password { get; set; } = "";
 
     [Required(ErrorMessage = "Полето е задължително")]

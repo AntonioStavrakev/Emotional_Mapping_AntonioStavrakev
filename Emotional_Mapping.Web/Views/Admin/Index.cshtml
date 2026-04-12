@@ -1,131 +1,219 @@
 @{
-    ViewData["Title"] = "Admin Panel";
+    ViewData["Title"] = T["Admin.Title"];
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">&#9889; Admin панел</h1>
-    <p class="em-page-sub">Управление на потребители, емоции и AI статистики</p>
+    <span class="em-page-header__icon">⚙️</span>
+    <div class="em-page-header__badge">🔐 @T.Pick("Администрация", "Administration")</div>
+    <h1 class="em-page-title">@T["Admin.Title"]</h1>
+    <p class="em-page-sub">@T["Admin.Sub"]</p>
 </div>
 
 <div class="adm4 fade-up fade-up-1">
-    <div class="stat-card"><div class="stat-card__label">Потребители</div><div class="stat-card__value" id="aUsers">—</div></div>
-    <div class="stat-card"><div class="stat-card__label">SuperUsers</div><div class="stat-card__value" id="aSuper">—</div></div>
-    <div class="stat-card"><div class="stat-card__label">AI заявки днес</div><div class="stat-card__value" id="aAI">—</div></div>
-    <div class="stat-card"><div class="stat-card__label">Точки общо</div><div class="stat-card__value" id="aPoints">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">@T.Pick("Потребители", "Users")</div><div class="stat-card__value" id="aUsers">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">Premium</div><div class="stat-card__value" id="aSuper">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">@T.Pick("AI заявки днес", "AI requests today")</div><div class="stat-card__value" id="aAI">—</div></div>
+    <div class="stat-card"><div class="stat-card__label">@T.Pick("Точки общо", "Total points")</div><div class="stat-card__value" id="aPoints">—</div></div>
 </div>
 
 <div class="tabs fade-up fade-up-2">
-    <button class="tbtn on" onclick="showTab('users',this)">Потребители</button>
-    <button class="tbtn" onclick="showTab('emotions',this)">Емоции</button>
-    <button class="tbtn" onclick="showTab('points',this)">Точки</button>
-    <button class="tbtn" onclick="showTab('reports',this)">Сигнали</button>
-    <button class="tbtn" onclick="showTab('ai',this)">AI Usage</button>
+    <button class="tbtn on" onclick="showTab('users',this)">@T.Pick("Потребители", "Users")</button>
+    <button class="tbtn" onclick="showTab('emotions',this)">@T.Pick("Емоции", "Emotions")</button>
+    <button class="tbtn" onclick="showTab('places',this)">@T.Pick("Места", "Places")</button>
+    <button class="tbtn" onclick="showTab('points',this)">@T.Pick("Точки", "Points")</button>
+    <button class="tbtn" onclick="showTab('reports',this)">@T.Pick("Сигнали", "Reports")</button>
+    <button class="tbtn" onclick="showTab('ai',this)">AI @T.Pick("Употреба", "Usage")</button>
 </div>
 
 <div class="tp on em-card" id="tp-users">
     <div class="srow">
-        <div class="em-card__title" style="margin:0">Всички потребители</div>
-        <input class="em-input" id="uSearch" placeholder="Търси по имейл..."
+        <div class="em-card__title" style="margin:0">@T.Pick("Всички потребители", "All users")</div>
+        <input class="em-input" id="uSearch" placeholder="@T.Pick("Търси по имейл...", "Search by email...")"
                style="max-width:260px;"/>
     </div>
     <div style="overflow-x:auto">
         <table class="em-table">
             <thead>
                 <tr>
-                    <th>Потребител</th><th>Имейл</th>
-                    <th>Регистрация</th><th>Роля</th><th>Действия</th>
+                    <th>@T.Pick("Потребител", "User")</th><th>@T.Pick("Имейл", "Email")</th>
+                    <th>@T.Pick("Регистрация", "Registered")</th><th>@T.Pick("Роля", "Role")</th><th>@T.Pick("Действия", "Actions")</th>
                 </tr>
             </thead>
             <tbody id="uBody">
-                <tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">Зареждане...</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">@T.Pick("Зареждане...", "Loading...")</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <div class="tp em-card" id="tp-emotions">
-    <div class="em-card__title">Каталог с емоции</div>
+    <div class="em-card__title">@T.Pick("Каталог с емоции", "Emotion catalog")</div>
     <form id="addEmForm"
           style="display:grid;grid-template-columns:1fr 1fr 110px auto;gap:.75rem;align-items:end;margin-bottom:1.5rem;">
         <div>
-            <label class="em-label">Enum стойност</label>
-            <input class="em-input" id="emType" placeholder="Joy, Calm..."/>
+            <label class="em-label">@T.Pick("Enum стойност", "Enum value")</label>
+            <input class="em-input" id="emType" placeholder="@T.Pick("Joy, Calm...", "Joy, Calm...")"/>
         </div>
         <div>
-            <label class="em-label">Название (BG)</label>
-            <input class="em-input" id="emName" placeholder="Радост"/>
+            <label class="em-label">@T.Pick("Название", "Display name")</label>
+            <input class="em-input" id="emName" placeholder="@T.Pick("Радост", "Joy")"/>
         </div>
         <div>
-            <label class="em-label">Цвят</label>
+            <label class="em-label">@T.Pick("Цвят", "Color")</label>
             <input class="em-input" id="emColor" type="color" value="#7c6ff7"
                    style="height:42px;padding:.3rem;cursor:pointer;"/>
         </div>
-        <button type="submit" class="btn-em btn-em-primary">Добави</button>
+        <button type="submit" class="btn-em btn-em-primary">@T.Pick("Добави", "Add")</button>
     </form>
     <table class="em-table">
-        <thead><tr><th>Тип</th><th>Название</th><th>Цвят</th><th>Активна</th></tr></thead>
+        <thead><tr><th>@T.Pick("Тип", "Type")</th><th>@T.Pick("Название", "Name")</th><th>@T.Pick("Цвят", "Color")</th><th>@T.Pick("Активна", "Active")</th></tr></thead>
         <tbody id="emBody">
-            <tr><td colspan="4" style="color:#6b7080">Зареждане...</td></tr>
+            <tr><td colspan="4" style="color:#6b7080">@T.Pick("Зареждане...", "Loading...")</td></tr>
         </tbody>
     </table>
 </div>
 
 <div class="tp em-card" id="tp-points">
-    <div class="em-card__title">Всички емоционални точки</div>
+    <div class="em-card__title">@T.Pick("Всички емоционални точки", "All emotional points")</div>
     <div style="overflow-x:auto;margin-top:1rem">
         <table class="em-table">
             <thead>
                 <tr>
-                    <th>ID</th><th>Потребител</th><th>Емоция</th>
-                    <th>Инт.</th><th>Одобрена</th><th>Действия</th>
+                    <th>ID</th><th>@T.Pick("Потребител", "User")</th><th>@T.Pick("Емоция", "Emotion")</th>
+                    <th>@T.Pick("Инт.", "Int.")</th><th>@T.Pick("Одобрена", "Approved")</th><th>@T.Pick("Действия", "Actions")</th>
                 </tr>
             </thead>
             <tbody id="ptBody">
-                <tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">Зареждане...</td></tr>
+                <tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">@T.Pick("Зареждане...", "Loading...")</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="tp em-card" id="tp-places">
+    <div class="em-card__title">@T.Pick("Предложени места за одобрение", "Suggested places for approval")</div>
+    <div style="overflow-x:auto;margin-top:1rem">
+        <table class="em-table">
+            <thead>
+                <tr>
+                    <th>@T.Pick("Място", "Place")</th><th>@T.Pick("Град", "City")</th><th>@T.Pick("Район", "District")</th><th>@T.Pick("Тип", "Type")</th><th>@T.Pick("Адрес", "Address")</th><th>@T.Pick("Действия", "Actions")</th>
+                </tr>
+            </thead>
+            <tbody id="plBody">
+                <tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">@T.Pick("Зареждане...", "Loading...")</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
 <div class="tp em-card" id="tp-reports">
-    <div class="em-card__title">Сигнали</div>
+    <div class="em-card__title">@T.Pick("Сигнали", "Reports")</div>
     <div style="margin-top:1rem">
-        <div class="em-alert em-alert-ok">Няма нови сигнали.</div>
+        <div class="em-alert em-alert-ok">@T.Pick("Няма нови сигнали.", "There are no new reports.")</div>
     </div>
 </div>
 
 <div class="tp em-card" id="tp-ai">
-    <div class="em-card__title">AI Usage Dashboard</div>
+    <div class="em-card__title">AI @T.Pick("Табло", "Dashboard")</div>
     <div id="aiDash" style="margin-top:1rem">
-        <p style="color:#6b7080">Зареждане...</p>
+        <p style="color:#6b7080">@T.Pick("Зареждане...", "Loading...")</p>
     </div>
 </div>
 
 @section Scripts {
 <script>
+const texts = {
+    loadError: '@T["Admin.LoadError"]',
+    userLoadError: '@T.Pick("Грешка при зареждане на потребители.", "Failed to load users.")',
+    noUsers: '@T.Pick("Няма потребители.", "No users.")',
+    standardUser: '@T.Pick("Потребител", "User")',
+    revoke: '@T.Pick("Отнеми", "Revoke")',
+    grantPremiumConfirm: '@T.Pick("Дай Premium права?", "Grant Premium access?")',
+    revokePremiumConfirm: '@T.Pick("Отнеми Premium права?", "Revoke Premium access?")',
+    grantPremiumFailed: '@T.Pick("Неуспешно даване на Premium права.", "Failed to grant Premium access.")',
+    revokePremiumFailed: '@T.Pick("Неуспешно отнемане на Premium права.", "Failed to revoke Premium access.")',
+    yes: '@T.Pick("Да", "Yes")',
+    no: '@T.Pick("Не", "No")',
+    none: '@T.Pick("Няма.", "None.")',
+    emotionLoadError: '@T.Pick("Грешка при зареждане на емоции.", "Failed to load emotions.")',
+    addEmotionFailed: '@T.Pick("Неуспешно добавяне на емоция.", "Failed to add emotion.")',
+    addEmotionNetwork: '@T.Pick("Мрежова грешка при добавяне на емоция.", "Network error while adding the emotion.")',
+    delete: '@T.Pick("Изтрий", "Delete")',
+    pointsLoadError: '@T.Pick("Грешка при зареждане на точки.", "Failed to load points.")',
+    placeTypeFallback: '@T.Pick("Друго", "Other")',
+    approve: '@T.Pick("Одобри", "Approve")',
+    noPendingSuggestions: '@T.Pick("Няма чакащи предложения.", "There are no pending suggestions.")',
+    placesLoadError: '@T.Pick("Грешка при зареждане на предложени места.", "Failed to load suggested places.")',
+    approvePlaceFailed: '@T.Pick("Неуспешно одобряване на място.", "Failed to approve the place.")',
+    deletePlaceConfirm: '@T.Pick("Изтриваш това предложено място?", "Delete this suggested place?")',
+    deletePlaceFailed: '@T.Pick("Неуспешно изтриване на място.", "Failed to delete the place.")',
+    deletePointConfirm: '@T.Pick("Изтриваш точката?", "Delete this point?")',
+    deletePointFailed: '@T.Pick("Неуспешно изтриване на точка.", "Failed to delete the point.")',
+    requestsToday: '@T.Pick("Заявки днес", "Requests today")',
+    uniqueUsers: '@T.Pick("Уникални потр.", "Unique users")',
+    generatedMaps: '@T.Pick("Генерирани карти", "Generated maps")',
+    topEmotions: '@T.Pick("Топ емоции", "Top emotions")',
+    topUsers: '@T.Pick("Топ потребители", "Top users")',
+    noData: '@T.Pick("Няма данни", "No data")'
+};
+
 var allU = [];
+var currentTab = 'users';
+
+async function apiJson(url, options) {
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(async function() {
+        const text = await response.text().catch(function() { return ''; });
+        return text ? { message: text } : null;
+    });
+
+    if (!response.ok) {
+        throw new Error(payload?.message || texts.loadError);
+    }
+
+    return payload;
+}
 
 function showTab(n, btn) {
+    currentTab = n;
     document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
     document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
     document.getElementById('tp-' + n).classList.add('on');
     btn.classList.add('on');
     if (n === 'users')    loadUsers();
     if (n === 'emotions') loadEmotions();
+    if (n === 'places')   loadSuggestedPlaces();
     if (n === 'points')   loadPoints();
     if (n === 'ai')       loadAI();
 }
 
-function loadUsers() {
-    fetch('/api/admin/users')
-        .then(function(r) { return r.json(); })
+async function loadOverview() {
+    try {
+        const overview = await apiJson('/api/admin/overview');
+        document.getElementById('aUsers').textContent = overview.users ?? 0;
+        document.getElementById('aSuper').textContent = overview.superUsers ?? 0;
+        document.getElementById('aAI').textContent = overview.aiRequestsToday ?? 0;
+        document.getElementById('aPoints').textContent = overview.points ?? 0;
+    } catch {
+        document.getElementById('aUsers').textContent = '—';
+        document.getElementById('aSuper').textContent = '—';
+        document.getElementById('aAI').textContent = '—';
+        document.getElementById('aPoints').textContent = '—';
+    }
+}
+
+async function loadUsers() {
+    apiJson('/api/admin/users')
         .then(function(us) {
             allU = us || [];
             document.getElementById('aUsers').textContent = allU.length;
             document.getElementById('aSuper').textContent =
                 allU.filter(function(u) { return u.isSuperUser; }).length;
             renderU(allU);
-        }).catch(function() {});
+        }).catch(function(err) {
+            document.getElementById('uBody').innerHTML =
+                '<tr><td colspan="5" style="text-align:center;color:#b42318;padding:2rem">' + esc(err.message || texts.userLoadError) + '</td></tr>';
+        });
 }
 
 function renderU(us) {
@@ -135,19 +223,19 @@ function renderU(us) {
                 + '<td><strong>' + esc(u.displayName || '—') + '</strong></td>'
                 + '<td style="color:#6b7080">' + esc(u.email || '') + '</td>'
                 + '<td style="font-size:.78rem;color:#6b7080">'
-                + (u.createdAtUtc ? new Date(u.createdAtUtc).toLocaleDateString('bg') : '—') + '</td>'
+                + (u.createdAtUtc ? new Date(u.createdAtUtc).toLocaleDateString(document.documentElement.lang || 'bg-BG') : '—') + '</td>'
                 + '<td>' + (u.isSuperUser
-                    ? '<span class="em-badge em-badge-super">SuperUser</span>'
-                    : '<span class="em-badge em-badge-calm">User</span>') + '</td>'
+                    ? '<span class="em-badge em-badge-super">Premium</span>'
+                    : '<span class="em-badge em-badge-calm">' + texts.standardUser + '</span>') + '</td>'
                 + '<td><div style="display:flex;gap:.5rem;">'
                 + (!u.isSuperUser
                     ? '<button class="btn-em btn-em-primary btn-em-sm" onclick="grantSU(\''
-                      + u.id + '\')">SuperUser</button>'
+                      + u.id + '\')">Premium</button>'
                     : '<button class="btn-em btn-em-ghost btn-em-sm" onclick="revokeSU(\''
-                      + u.id + '\')">Отнеми</button>')
+                      + u.id + '\')">' + texts.revoke + '</button>')
                 + '</div></td></tr>';
           }).join('')
-        : '<tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">Няма потребители.</td></tr>';
+        : '<tr><td colspan="5" style="text-align:center;color:#6b7080;padding:2rem">' + texts.noUsers + '</td></tr>';
 }
 
 document.getElementById('uSearch').addEventListener('input', function() {
@@ -159,41 +247,53 @@ document.getElementById('uSearch').addEventListener('input', function() {
 });
 
 function grantSU(id) {
-    if (!confirm('Дай SuperUser права?')) return;
+    if (!confirm(texts.grantPremiumConfirm)) return;
     fetch('/api/admin/grant-superuser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: id })
-    }).then(function() { loadUsers(); }).catch(function() {});
+    }).then(function(r) {
+        if (!r.ok) throw new Error('grant failed');
+        return loadUsers();
+    }).then(loadOverview).catch(function() {
+        alert(texts.grantPremiumFailed);
+    });
 }
 
 function revokeSU(id) {
-    if (!confirm('Отнеми SuperUser права?')) return;
+    if (!confirm(texts.revokePremiumConfirm)) return;
     fetch('/api/admin/revoke-superuser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: id })
-    }).then(function() { loadUsers(); }).catch(function() {});
+    }).then(function(r) {
+        if (!r.ok) throw new Error('revoke failed');
+        return loadUsers();
+    }).then(loadOverview).catch(function() {
+        alert(texts.revokePremiumFailed);
+    });
 }
 
 function loadEmotions() {
-    fetch('/api/admin/emotions')
-        .then(function(r) { return r.json(); })
+    apiJson('/api/admin/emotions')
         .then(function(items) {
             document.getElementById('emBody').innerHTML = (items || []).map(function(e) {
                 return '<tr>'
-                    + '<td><code style="color:#7c6ff7">' + esc(e.emotion || e.type || '') + '</code></td>'
+                    + '<td><code style="color:#7c6ff7">' + esc(e.emotion ?? e.type ?? '') + '</code></td>'
                     + '<td>' + esc(e.displayName || '') + '</td>'
                     + '<td><span style="display:inline-flex;align-items:center;gap:.45rem;">'
                     + '<span style="width:15px;height:15px;border-radius:50%;background:'
                     + esc(e.colorHex || '#888') + ';display:inline-block;"></span>'
                     + esc(e.colorHex || '') + '</span></td>'
                     + '<td>' + (e.isActive
-                        ? '<span class="em-badge em-badge-calm">Да</span>'
-                        : '<span class="em-badge em-badge-anger">Не</span>') + '</td>'
+                        ? '<span class="em-badge em-badge-calm">' + texts.yes + '</span>'
+                        : '<span class="em-badge em-badge-anger">' + texts.no + '</span>') + '</td>'
                     + '</tr>';
-            }).join('') || '<tr><td colspan="4" style="color:#6b7080">Няма.</td></tr>';
-        }).catch(function() {});
+            }).join('') || '<tr><td colspan="4" style="color:#6b7080">' + texts.none + '</td></tr>';
+        }).catch(function(err) {
+            document.getElementById('emBody').innerHTML =
+                '<tr><td colspan="4" style="color:#b42318">' + esc(err.message || texts.emotionLoadError) + '</td></tr>';
+        });
 }
 
 document.getElementById('addEmForm').addEventListener('submit', function(e) {
@@ -202,59 +302,140 @@ document.getElementById('addEmForm').addEventListener('submit', function(e) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            emotion:     document.getElementById('emType').value,
+            emotion:     document.getElementById('emType').value.trim(),
             displayName: document.getElementById('emName').value,
             colorHex:    document.getElementById('emColor').value
         })
-    }).then(function(r) {
-        if (r.ok) { document.getElementById('addEmForm').reset(); loadEmotions(); }
-    }).catch(function() {});
+    }).then(async function(r) {
+        if (r.ok) {
+            document.getElementById('addEmForm').reset();
+            loadEmotions();
+            return;
+        }
+
+        const err = await r.json().catch(function() { return null; });
+        alert(err?.message || texts.addEmotionFailed);
+    }).catch(function() {
+        alert(texts.addEmotionNetwork);
+    });
 });
 
 function loadPoints() {
-    fetch('/api/points?cityId=00000000-0000-0000-0000-000000000000')
-        .then(function(r) { return r.ok ? r.json() : []; })
+    apiJson('/api/admin/points')
         .then(function(pts) {
             document.getElementById('ptBody').innerHTML = (pts || []).slice(0, 60).map(function(p) {
                 return '<tr>'
                     + '<td style="font-size:.72rem;color:#6b7080">'
                     + (p.id || '').substring(0, 8) + '...</td>'
                     + '<td style="font-size:.8rem">'
-                    + (p.userId || '—').substring(0, 10) + '...</td>'
-                    + '<td><span class="em-badge em-badge-joy">' + esc(p.emotion || '') + '</span></td>'
+                    + esc(p.userEmail || (p.userId || '—').substring(0, 10) + '...') + '</td>'
+                    + '<td><span class="em-badge em-badge-joy">' + esc(toBgEmotion(p.emotion || '')) + '</span></td>'
                     + '<td style="text-align:center">' + (p.intensity || '—') + '</td>'
                     + '<td>' + (p.isApproved ? '&#10003;' : '&#10007;') + '</td>'
                     + '<td><button class="btn-em btn-em-danger btn-em-sm" onclick="delPt(\''
-                    + p.id + '\')">Изтрий</button></td></tr>';
+                    + p.id + '\')">' + texts.delete + '</button></td></tr>';
             }).join('')
-            || '<tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">Няма.</td></tr>';
-        }).catch(function() {});
+            || '<tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">' + texts.none + '</td></tr>';
+            document.getElementById('aPoints').textContent = (pts || []).length;
+        }).catch(function(err) {
+            document.getElementById('ptBody').innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#b42318;padding:2rem">' + esc(err.message || texts.pointsLoadError) + '</td></tr>';
+        });
+}
+
+function loadSuggestedPlaces() {
+    apiJson('/api/admin/places/pending')
+        .then(function(items) {
+            document.getElementById('plBody').innerHTML = (items || []).map(function(p) {
+                return '<tr>'
+                    + '<td><strong>' + esc(p.name || '—') + '</strong>'
+                    + (p.description ? '<div style="font-size:.76rem;color:#6b7080;margin-top:4px;">'
+                    + esc(p.description) + '</div>' : '')
+                    + '<div style="font-size:.72rem;color:#8e9888;margin-top:4px;">'
+                    + Number(p.lat || 0).toFixed(5) + ', ' + Number(p.lng || 0).toFixed(5)
+                    + '</div></td>'
+                    + '<td>' + esc(p.cityName || '—') + '</td>'
+                    + '<td>' + esc(p.districtName || '—') + '</td>'
+                    + '<td><span class="em-badge em-badge-calm">' + esc(p.type || texts.placeTypeFallback) + '</span></td>'
+                    + '<td style="font-size:.8rem;color:#6b7080">' + esc(p.address || '—') + '</td>'
+                    + '<td><div style="display:flex;gap:.5rem;flex-wrap:wrap;">'
+                    + '<button class="btn-em btn-em-primary btn-em-sm" onclick="approvePlace(\''
+                    + p.id + '\')">' + texts.approve + '</button>'
+                    + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deletePlace(\''
+                    + p.id + '\')">' + texts.delete + '</button>'
+                    + '</div></td>'
+                    + '</tr>';
+            }).join('') || '<tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">' + texts.noPendingSuggestions + '</td></tr>';
+        })
+        .catch(function(err) {
+            document.getElementById('plBody').innerHTML =
+                '<tr><td colspan="6" style="text-align:center;color:#b42318;padding:2rem">' + esc(err.message || texts.placesLoadError) + '</td></tr>';
+        });
+}
+
+function approvePlace(id) {
+    fetch('/api/admin/places/' + id + '/approve', { method: 'POST' })
+        .then(function(r) {
+            if (!r.ok) throw new Error('approve failed');
+            loadSuggestedPlaces();
+        })
+        .catch(function() {
+            alert(texts.approvePlaceFailed);
+        });
+}
+
+function deletePlace(id) {
+    if (!confirm(texts.deletePlaceConfirm)) return;
+    fetch('/api/admin/places/' + id, { method: 'DELETE' })
+        .then(function(r) {
+            if (!r.ok) throw new Error('delete failed');
+            loadSuggestedPlaces();
+        })
+        .catch(function() {
+            alert(texts.deletePlaceFailed);
+        });
 }
 
 function delPt(id) {
-    if (!confirm('Изтриваш точката?')) return;
+    if (!confirm(texts.deletePointConfirm)) return;
     fetch('/api/admin/points/' + id, { method: 'DELETE' })
-        .then(function(r) { if (r.ok) loadPoints(); }).catch(function() {});
+        .then(function(r) {
+            if (!r.ok) throw new Error('delete failed');
+            loadPoints();
+            loadOverview();
+        }).catch(function() {
+            alert(texts.deletePointFailed);
+        });
 }
 
 function loadAI() {
-    fetch('/api/stats/dashboard')
-        .then(function(r) { return r.ok ? r.json() : null; })
+    apiJson('/api/stats/dashboard')
         .then(function(d) {
-            if (!d) return;
-            document.getElementById('aAI').textContent = d.totalRequestsToday || '—';
+            document.getElementById('aAI').textContent = d.totalRequestsToday ?? d.totalRequests ?? '—';
             document.getElementById('aiDash').innerHTML =
-                '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">'
-                + '<div class="stat-card"><div class="stat-card__label">Заявки днес</div>'
-                + '<div class="stat-card__value">' + (d.totalRequestsToday || '—') + '</div></div>'
-                + '<div class="stat-card"><div class="stat-card__label">Уникални потр.</div>'
-                + '<div class="stat-card__value">' + (d.uniqueUsersToday || '—') + '</div></div>'
-                + '<div class="stat-card"><div class="stat-card__label">Генерирани карти</div>'
-                + '<div class="stat-card__value">' + (d.totalMapsToday || '—') + '</div></div>'
+                '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">'
+                + '<div class="stat-card"><div class="stat-card__label">' + texts.requestsToday + '</div>'
+                + '<div class="stat-card__value">' + (d.totalRequestsToday ?? d.totalRequests ?? '—') + '</div></div>'
+                + '<div class="stat-card"><div class="stat-card__label">' + texts.uniqueUsers + '</div>'
+                + '<div class="stat-card__value">' + (d.uniqueUsersToday ?? '—') + '</div></div>'
+                + '<div class="stat-card"><div class="stat-card__label">' + texts.generatedMaps + '</div>'
+                + '<div class="stat-card__value">' + (d.totalMapsToday ?? '—') + '</div></div>'
+                + '</div>'
+                + '<div style="margin-top:18px;">'
+                + '<div class="em-card__title">' + texts.topEmotions + '</div>'
+                + ((d.topEmotions || []).map(function(x) {
+                    return '<div class="drow"><span>' + esc(toBgEmotion(x.emotion || '')) + '</span><strong>' + (x.count ?? 0) + '</strong></div>';
+                }).join('') || '<div class="empty"><div class="empty__title">' + texts.noData + '</div></div>')
+                + '</div>'
+                + '<div style="margin-top:18px;">'
+                + '<div class="em-card__title">' + texts.topUsers + '</div>'
+                + ((d.topUsers || []).map(function(x) {
+                    return '<div class="drow"><span>' + esc(x.userEmail || x.userId || '') + '</span><strong>' + (x.requests ?? 0) + '</strong></div>';
+                }).join('') || '<div class="empty"><div class="empty__title">' + texts.noData + '</div></div>')
                 + '</div>';
-        }).catch(function() {
+        }).catch(function(err) {
             document.getElementById('aiDash').innerHTML =
-                '<div class="em-alert em-alert-error">Грешка при зареждане.</div>';
+                '<div class="em-alert em-alert-error">' + esc(err.message || texts.loadError) + '</div>';
         });
 }
 
@@ -263,10 +444,7 @@ function esc(s) {
                           .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+loadOverview();
 loadUsers();
-fetch('/api/stats?cityId=00000000-0000-0000-0000-000000000000')
-    .then(function(r) { return r.json(); })
-    .then(function(s) { document.getElementById('aPoints').textContent = s.totalPoints || '—'; })
-    .catch(function() {});
 </script>
 }

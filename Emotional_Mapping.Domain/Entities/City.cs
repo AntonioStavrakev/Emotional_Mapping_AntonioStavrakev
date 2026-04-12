@@ -31,6 +31,7 @@ public class City
         Center = center ?? throw new ArgumentNullException(nameof(center));
         DefaultZoom = defaultZoom is < 1 or > 20 ? 12 : defaultZoom;
     }
+    
 
     public void Rename(string newName)
     {

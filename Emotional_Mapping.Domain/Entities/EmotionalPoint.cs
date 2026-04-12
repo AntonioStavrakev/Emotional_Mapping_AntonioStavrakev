@@ -31,7 +31,7 @@ public class EmotionalPoint
     public bool IsApproved { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
     public DateTime? UpdatedAtUtc { get; private set; }
-    public Guid DistrictId { get; set; }
+    public Guid? DistrictId { get; set; }
     public District? District { get; set; }
 
     private EmotionalPoint() { } // EF

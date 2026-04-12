@@ -12,4 +12,5 @@ public class GenerateMapRequestDto
     public PlaceType? SelectedPlaceType { get; set; }
 
     public int? RadiusMeters { get; set; }
+    public string? Language { get; set; }
 }

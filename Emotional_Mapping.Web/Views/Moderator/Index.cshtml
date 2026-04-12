@@ -1,36 +1,51 @@
 @{
-    ViewData["Title"] = "Модератор панел";
+    ViewData["Title"] = T.Pick("Модератор панел", "Moderator panel");
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">&#128737; Модератор панел</h1>
-    <p class="em-page-sub">Преглед и управление на потребителско съдържание</p>
+    <span class="em-page-header__icon">🛡️</span>
+    <div class="em-page-header__badge">🛠️ @T.Pick("Модерация", "Moderation")</div>
+    <h1 class="em-page-title">@T.Pick("Модератор панел", "Moderator panel")</h1>
+    <p class="em-page-sub">@T.Pick("Преглед и управление на потребителско съдържание", "Review and manage user-generated content")</p>
 </div>
 
 <div class="tabs fade-up fade-up-1">
-    <button class="tbtn on" onclick="showTab('pending',this)">Неодобрени точки</button>
-    <button class="tbtn" onclick="showTab('reported',this)">Сигнализирани</button>
+    <button class="tbtn on" onclick="showTab('pending',this)">@T.Pick("Неодобрени точки", "Pending points")</button>
+    <button class="tbtn" onclick="showTab('reported',this)">@T.Pick("Сигнализирани", "Reported")</button>
 </div>
 
 <div class="tp on" id="tp-pending">
     <div class="em-alert em-alert-info" style="margin-bottom:1.5rem;">
-        Прегледай новите точки и ги одобри или отхвърли.
-        Одобрените се появяват на общата карта.
+        @T.Pick("Прегледай новите точки и ги одобри или отхвърли. Одобрените се появяват на общата карта.", "Review new points and approve or reject them. Approved ones appear on the public map.")
     </div>
     <div id="pendList">
-        <p style="color:#6b7080">Зареждане...</p>
+        <p style="color:#6b7080">@T.Pick("Зареждане...", "Loading...")</p>
     </div>
 </div>
 
 <div class="tp em-card" id="tp-reported">
-    <div class="em-card__title">Сигнализирано съдържание</div>
+    <div class="em-card__title">@T.Pick("Сигнализирано съдържание", "Reported content")</div>
     <div style="margin-top:1rem">
-        <div class="em-alert em-alert-ok">Няма активни сигнали.</div>
+        <div class="em-alert em-alert-ok">@T.Pick("Няма активни сигнали.", "There are no active reports.")</div>
     </div>
 </div>
 
 @section Scripts {
 <script>
+const texts = {
+    noPendingPoints: '@T.Pick("Няма неодобрени точки.", "There are no pending points.")',
+    untitled: '@T.Pick("Без заглавие", "Untitled")',
+    noDescription: '@T.Pick("Без описание.", "No description.")',
+    intensity: '@T.Pick("Интензитет", "Intensity")',
+    anonymous: '@T.Pick("Анонимна", "Anonymous")',
+    yes: '@T.Pick("Да", "Yes")',
+    no: '@T.Pick("Не", "No")',
+    approve: '@T.Pick("Одобри", "Approve")',
+    delete: '@T.Pick("Изтрий", "Delete")',
+    loadError: '@T.Pick("Грешка при зареждане.", "Failed to load.")',
+    deleteConfirm: '@T.Pick("Изтриваш тази точка?", "Delete this point?")'
+};
+
 function showTab(n, btn) {
     document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
     document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
@@ -46,36 +61,36 @@ function loadPending() {
             var pend = (pts || []).filter(function(p) { return !p.isApproved; });
             if (!pend.length) {
                 document.getElementById('pendList').innerHTML =
-                    '<div class="em-alert em-alert-ok">Няма неодобрени точки.</div>';
+                    '<div class="em-alert em-alert-ok">' + texts.noPendingPoints + '</div>';
                 return;
             }
             document.getElementById('pendList').innerHTML = pend.map(function(p) {
                 return '<div class="pcard">'
                     + '<div class="pcard__hdr">'
                     + '<div>'
-                    + '<strong style="font-size:.9rem">' + esc(p.title || 'Без заглавие') + '</strong>'
+                    + '<strong style="font-size:.9rem">' + esc(p.title || texts.untitled) + '</strong>'
                     + '<span class="em-badge em-badge-joy" style="margin-left:.65rem">'
-                    + esc(p.emotion || '') + '</span>'
+                    + esc(toBgEmotion(p.emotion) || '') + '</span>'
                     + '</div>'
                     + '<span style="font-size:.75rem;color:#6b7080">'
-                    + (p.createdAtUtc ? new Date(p.createdAtUtc).toLocaleDateString('bg') : '')
+                    + (p.createdAtUtc ? new Date(p.createdAtUtc).toLocaleDateString(document.documentElement.lang || 'bg-BG') : '')
                     + '</span>'
                     + '</div>'
-                    + '<div class="pcard__body">' + esc(p.note || 'Без описание.') + '</div>'
+                    + '<div class="pcard__body">' + esc(p.note || texts.noDescription) + '</div>'
                     + '<div style="font-size:.75rem;color:#6b7080;margin-bottom:.75rem">'
-                    + 'Интензитет: ' + (p.intensity || '—')
-                    + ' &bull; Анонимна: ' + (p.isAnonymous ? 'Да' : 'Не')
+                    + texts.intensity + ': ' + (p.intensity || '—')
+                    + ' &bull; ' + texts.anonymous + ': ' + (p.isAnonymous ? texts.yes : texts.no)
                     + '</div>'
                     + '<div class="pcard__acts">'
                     + '<button class="btn-em btn-em-success btn-em-sm" onclick="approveP(\''
-                    + p.id + '\')">Одобри</button>'
+                    + p.id + '\')">' + texts.approve + '</button>'
                     + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deleteP(\''
-                    + p.id + '\')">Изтрий</button>'
+                    + p.id + '\')">' + texts.delete + '</button>'
                     + '</div></div>';
             }).join('');
         }).catch(function() {
             document.getElementById('pendList').innerHTML =
-                '<div class="em-alert em-alert-error">Грешка при зареждане.</div>';
+                '<div class="em-alert em-alert-error">' + texts.loadError + '</div>';
         });
 }
 
@@ -86,7 +101,7 @@ function approveP(id) {
 }
 
 function deleteP(id) {
-    if (!confirm('Изтриваш тази точка?')) return;
+    if (!confirm(texts.deleteConfirm)) return;
     fetch('/api/admin/points/' + id, { method: 'DELETE' })
         .then(function(r) { if (r.ok) loadPending(); })
         .catch(function() {});

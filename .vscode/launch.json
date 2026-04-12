@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GEOFEEL API (5052)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-solution",
+      "program": "${workspaceFolder}/Emotional_Mapping.Api/bin/Debug/net9.0/Emotional_Mapping.Api.dll",
+      "cwd": "${workspaceFolder}/Emotional_Mapping.Api",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5052"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(http://\\S+)"
+      }
+    },
+    {
+      "name": "GEOFEEL Web (5202)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-solution",
+      "program": "${workspaceFolder}/Emotional_Mapping.Web/bin/Debug/net9.0/Emotional_Mapping.Web.dll",
+      "cwd": "${workspaceFolder}/Emotional_Mapping.Web",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5202",
+        "ApiBaseUrl": "http://127.0.0.1:5052"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(http://\\S+)"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "GEOFEEL Full Stack",
+      "configurations": [
+        "GEOFEEL API (5052)",
+        "GEOFEEL Web (5202)"
+      ]
+    }
+  ]
+}

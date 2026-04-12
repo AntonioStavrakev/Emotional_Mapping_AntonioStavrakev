@@ -1,12 +1,14 @@
 @model Emotional_Mapping.Web.Models.ContactViewModel
 
 @{
-    ViewData["Title"] = "Контакт";
+    ViewData["Title"] = T["Contact.Title"];
 }
 
-<div class="contact-hero">
-    <h1 class="em-page-title">Контакт</h1>
-    <p class="em-page-sub">Изпрати съобщение, въпрос или идея директно към GEOFEEL.</p>
+<div class="em-page-header fade-up">
+    <span class="em-page-header__icon">✉️</span>
+    <div class="em-page-header__badge">💬 GEOFEEL</div>
+    <h1 class="em-page-title">@T["Contact.Title"]</h1>
+    <p class="em-page-sub">@T["Contact.Sub"]</p>
 </div>
 
 <div class="contact-wrap fade-up fade-up-1">
@@ -26,32 +28,32 @@
 
             <div class="contact-grid">
                 <div>
-                    <label asp-for="Name" class="em-label">Име</label>
-                    <input asp-for="Name" class="em-input" placeholder="Твоето име" />
+                    <label asp-for="Name" class="em-label">@T["Contact.Name"]</label>
+                    <input asp-for="Name" class="em-input" placeholder="@T["Contact.NamePlaceholder"]" />
                     <span asp-validation-for="Name" class="text-danger small"></span>
                 </div>
 
                 <div>
-                    <label asp-for="Email" class="em-label">Имейл</label>
+                    <label asp-for="Email" class="em-label">@T["Contact.Email"]</label>
                     <input asp-for="Email" class="em-input" placeholder="name@example.com" />
                     <span asp-validation-for="Email" class="text-danger small"></span>
                 </div>
 
                 <div class="full">
-                    <label asp-for="Subject" class="em-label">Тема</label>
-                    <input asp-for="Subject" class="em-input" placeholder="Например: Въпрос за проекта" />
+                    <label asp-for="Subject" class="em-label">@T["Contact.Subject"]</label>
+                    <input asp-for="Subject" class="em-input" placeholder="@T["Contact.SubjectPlaceholder"]" />
                     <span asp-validation-for="Subject" class="text-danger small"></span>
                 </div>
 
                 <div class="full">
-                    <label asp-for="Message" class="em-label">Съобщение</label>
-                    <textarea asp-for="Message" rows="7" class="em-textarea" placeholder="Напиши съобщението си..."></textarea>
+                    <label asp-for="Message" class="em-label">@T["Contact.Message"]</label>
+                    <textarea asp-for="Message" rows="7" class="em-textarea" placeholder="@T["Contact.MessagePlaceholder"]"></textarea>
                     <span asp-validation-for="Message" class="text-danger small"></span>
                 </div>
             </div>
 
             <div style="margin-top:18px;">
-                <button type="submit" class="btn-em btn-em-primary">Изпрати съобщение</button>
+                <button type="submit" class="btn-em btn-em-primary">@T["Contact.Send"]</button>
             </div>
         </form>
     </div>

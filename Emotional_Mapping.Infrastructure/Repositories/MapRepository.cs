@@ -43,6 +43,8 @@ public class MapRepository : IMapRepository
     {
         return _db.GeneratedMaps
             .Include(x => x.MapRequest)
+            .Include(x => x.Recommendations)
+                .ThenInclude(r => r.Place)
             .Where(x => x.MapRequest != null &&
                         x.MapRequest.CityId == cityId &&
                         x.Visibility == MapVisibility.Public)
@@ -52,7 +54,14 @@ public class MapRepository : IMapRepository
     }
 
     public Task<int> CountRequestsByCityAsync(Guid cityId, CancellationToken ct)
-        => _db.MapRequests.CountAsync(x => x.CityId == cityId, ct);
+    {
+        var query = _db.MapRequests.AsQueryable();
+
+        if (cityId != Guid.Empty)
+            query = query.Where(x => x.CityId == cityId);
+
+        return query.CountAsync(ct);
+    }
 
     public Task<GeneratedMap?> GetBySlugAsync(string slug, CancellationToken ct)
     {
@@ -75,10 +84,20 @@ public class MapRepository : IMapRepository
             x.CreatedAtUtc <= toUtc, ct);
     }
 
+    public Task<int> CountGeneratedMapsBetweenAsync(DateTime fromUtc, DateTime toUtc, CancellationToken ct)
+    {
+        return _db.GeneratedMaps.CountAsync(x =>
+            x.GeneratedAtUtc >= fromUtc &&
+            x.GeneratedAtUtc <= toUtc, ct);
+    }
+
     public Task<List<MapRequest>> GetAllAsync(CancellationToken ct)
     {
         return _db.MapRequests
             .AsNoTracking()
             .ToListAsync(ct);
     }
+
+    public Task SaveChangesAsync(CancellationToken ct)
+        => _db.SaveChangesAsync(ct);
 }

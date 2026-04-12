@@ -1,45 +1,43 @@
 @{
-    ViewData["Title"] = "Поверителност";
+    ViewData["Title"] = T["Footer.Privacy"];
 }
 
 <div style="max-width:720px;margin:0 auto;" class="fade-up">
     <div class="em-page-header">
-        <h1 class="em-page-title">Политика за поверителност</h1>
-        <p class="em-page-sub">Последна актуализация: 2026</p>
+        <h1 class="em-page-title">@T.Pick("Политика за поверителност", "Privacy Policy")</h1>
+        <p class="em-page-sub">@T.Pick("Последна актуализация: 2026", "Last updated: 2026")</p>
     </div>
     <div class="em-card" style="display:flex;flex-direction:column;gap:1.75rem;line-height:1.85;">
         <div>
             <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                Какви данни събираме
+                @T.Pick("Какви данни събираме", "What data we collect")
             </h2>
             <p style="color:#6b7080;font-size:.9rem;">
-                Събираме само имейл адрес, показвано име и доброволно добавените
-                емоционални точки. Анонимните точки не са свързани с идентифициращи данни.
+                @T.Pick("Събираме само имейл адрес, показвано име и доброволно добавените емоционални точки. Анонимните точки не са свързани с идентифициращи данни.", "We only collect the email address, display name, and voluntarily added emotional points. Anonymous points are not linked to identifying data.")
             </p>
         </div>
         <div>
             <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                AI обработка
+                @T.Pick("AI обработка", "AI processing")
             </h2>
             <p style="color:#6b7080;font-size:.9rem;">
-                Описанията може да се изпращат към OpenAI API.
-                Не изпращаме лични идентификатори към трети страни.
+                @T.Pick("Описанията може да се изпращат към OpenAI API. Не изпращаме лични идентификатори към трети страни.", "Descriptions may be sent to the OpenAI API. We do not send personal identifiers to third parties.")
             </p>
         </div>
         <div>
             <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                Плащания
+                @T.Pick("Плащания", "Payments")
             </h2>
             <p style="color:#6b7080;font-size:.9rem;">
-                Плащанията се обработват от Stripe. Не съхраняваме данни за кредитни карти.
+                @T.Pick("Плащанията се обработват от Stripe. Не съхраняваме данни за кредитни карти.", "Payments are processed by Stripe. We do not store credit card data.")
             </p>
         </div>
         <div>
             <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                Твоите права
+                @T.Pick("Твоите права", "Your rights")
             </h2>
             <p style="color:#6b7080;font-size:.9rem;">
-                Имаш право да поискаш изтриване или експорт на данните си по всяко време.
+                @T.Pick("Имаш право да поискаш изтриване или експорт на данните си по всяко време.", "You have the right to request deletion or export of your data at any time.")
             </p>
         </div>
     </div>

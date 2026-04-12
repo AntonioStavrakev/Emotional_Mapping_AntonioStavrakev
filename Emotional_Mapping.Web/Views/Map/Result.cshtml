@@ -1,5 +1,12 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+
+@functions {
+IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
+
 @{
-    ViewData["Title"] = "Резултат";
+    ViewData["Title"] = T.Pick("Резултат", "Result");
 }
 
 @section Styles {
@@ -7,59 +14,65 @@
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">Резултат от AI карта</h1>
-    <p class="em-page-sub">Детайли, препоръки, confidence score и публичен линк.</p>
+    <span class="em-page-header__icon">🧭</span>
+    <div class="em-page-header__badge">✨ @T.Pick("AI Резултат", "AI Result")</div>
+    <h1 class="em-page-title">@T.Pick("Твоята AI карта", "Your AI map")</h1>
+    <p class="em-page-sub">@T.Pick("AI анализира настроението ти и генерира персонализирана карта с препоръки.", "AI analyzes your mood and generates a personalized map with recommendations.")</p>
 </div>
 
 <div id="alertBox"></div>
 
 <div class="res-grid fade-up fade-up-1">
-    <div class="gen-preview" style="min-height:620px;">
+    <div class="gen-preview map-soft" style="min-height:620px;">
         <div id="resultMap" style="width:100%;height:620px;"></div>
     </div>
 
     <aside class="sidebar">
         <div class="ai-card">
-            <div class="ai-card__lbl">Заглавие</div>
+            <div class="ai-card__lbl">@T.Pick("Заглавие", "Title")</div>
             <div class="ai-card__val" id="mapTitle">—</div>
 
             <div style="margin-top:16px;">
-                <div class="ai-card__lbl">Доминираща емоция</div>
-                <div id="mapEmotion" class="ai-card__val" style="font-size:1.2rem;">—</div>
+                <div class="ai-card__lbl">@T.Pick("Доминираща емоция", "Dominant emotion")</div>
+                <div id="mapEmotion" class="ai-card__val ai-card__val--emotion">—</div>
             </div>
 
             <div style="margin-top:16px;">
-                <div class="ai-card__lbl">Confidence</div>
-                <div id="mapConfidence" class="ai-card__val" style="font-size:1.2rem;">0%</div>
+                <div class="ai-card__lbl">@T.Pick("Увереност", "Confidence")</div>
+                <div id="mapConfidence" class="ai-card__val ai-card__val--metric">0%</div>
                 <div class="conf-bar"><div id="confFill" class="conf-bar__fill" style="width:0%"></div></div>
             </div>
 
             <div style="margin-top:16px;">
-                <div class="ai-card__lbl">Summary</div>
+                <div class="ai-card__lbl">@T.Pick("Описание", "Description")</div>
                 <div id="mapSummary" style="color:var(--muted);font-size:.92rem;">—</div>
             </div>
         </div>
 
         <div class="ai-card">
-            <div class="ai-card__lbl">Действия</div>
+            <div class="ai-card__lbl">@T.Pick("Действия", "Actions")</div>
             <div class="acts">
-                <button id="publicBtn" class="btn-em btn-em-primary btn-em-sm">Направи публична</button>
-                <button id="copyBtn" class="btn-em btn-em-ghost btn-em-sm">Копирай линк</button>
+                <button id="publicBtn" class="btn-em btn-em-primary btn-em-sm">@T.Pick("Направи публична", "Make public")</button>
+                <button id="copyBtn" class="btn-em btn-em-ghost btn-em-sm">@T.Pick("Копирай линк", "Copy link")</button>
+                <button id="googleMapsBtn" class="btn-em btn-em-ghost btn-em-sm" disabled>@T.Pick("Отвори в Google Maps", "Open in Google Maps")</button>
             </div>
+            <div id="actionStatusBox"></div>
+            <div id="googleMapsHint" style="font-size:.83rem;color:var(--muted);"></div>
             <div id="publicLinkBox" style="font-size:.83rem;color:var(--muted);word-break:break-all;"></div>
         </div>
 
         <div class="ai-card">
-            <div class="ai-card__lbl">Препоръки</div>
+            <div class="ai-card__lbl">@T.Pick("Препоръки", "Recommendations")</div>
             <div id="recommendationsBox" class="rec-list"></div>
         </div>
 
         <div class="ai-card">
-            <div class="ai-card__lbl">Обратна връзка</div>
+            <div class="ai-card__lbl">@T.Pick("Обратна връзка", "Feedback")</div>
             <div class="acts">
-                <button class="vote-btn" onclick="vote(true)">👍 Точно ми пасва</button>
-                <button class="vote-btn" onclick="vote(false)">👎 Не пасва</button>
+                <button id="voteMatchBtn" class="vote-btn" onclick="vote(true)">👍 @T.Pick("Точно ми пасва", "It matches well")</button>
+                <button id="voteMismatchBtn" class="vote-btn" onclick="vote(false)">👎 @T.Pick("Не пасва", "Doesn't match")</button>
             </div>
+            <div id="feedbackStatusBox"></div>
         </div>
     </aside>
 </div>
@@ -67,33 +80,62 @@
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+const texts = {
+    mapNotFound: @Js(T.Pick("Картата не беше намерена.", "The map was not found.")),
+    mapFallback: @Js(T.Pick("Карта", "Map")),
+    noDescription: @Js(T.Pick("Няма описание.", "No description.")),
+    noRecommendations: @Js(T.Pick("Няма препоръки.", "No recommendations.")),
+    placeFallback: @Js(T.Pick("Място", "Place")),
+    feedbackMissingMap: @Js(T.Pick("Липсва карта за обратна връзка.", "A map is required for feedback.")),
+    feedbackSending: @Js(T.Pick("Изпращаме обратната връзка ти...", "Sending your feedback...")),
+    feedbackThanks: @Js(T.Pick("Благодарим за обратната връзка!", "Thank you for your feedback!")),
+    feedbackFailed: @Js(T.Pick("Неуспешно изпращане на обратна връзка.", "Failed to send feedback.")),
+    feedbackNetwork: @Js(T.Pick("Мрежова грешка при изпращане на обратната връзка.", "Network error while sending feedback.")),
+    feedbackMatchComment: @Js(T.Pick("Пасва на настроението ми.", "It matches my mood.")),
+    feedbackMismatchComment: @Js(T.Pick("Не пасва добре на настроението ми.", "It does not match my mood well.")),
+    makePublicFailed: @Js(T.Pick("Неуспешно публикуване.", "Failed to publish the map.")),
+    publicNow: @Js(T.Pick("Картата вече е публична.", "The map is now public.")),
+    publicLinkMissing: @Js(T.Pick("Още няма публичен линк. Направи картата публична първо.", "There is no public link yet. Make the map public first.")),
+    linkCopied: @Js(T.Pick("Линкът е копиран.", "The link was copied.")),
+    googleMapsMissing: @Js(T.Pick("Няма налична локация за Google Maps.", "There is no location available for Google Maps.")),
+    googleMapsReady: @Js(T.Pick("Google Maps ще отвори: ", "Google Maps will open: ")),
+    googleMapsFallback: @Js(T.Pick("избрана препоръка", "selected recommendation"))
+};
 const params = new URLSearchParams(window.location.search);
 const mapId = params.get('mapId');
 
-const resultMap = L.map('resultMap').setView([42.6977, 23.3219], 7);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+const resultMap = L.map('resultMap').setView([42.7339, 25.4858], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
     maxZoom: 19
 }).addTo(resultMap);
 
 let loadedMap = null;
 let loadedPublicLink = '';
+let currentGoogleMapsUrl = '';
+let feedbackSubmitting = false;
+const recommendationLayer = L.layerGroup().addTo(resultMap);
+const voteButtons = [
+    document.getElementById('voteMatchBtn'),
+    document.getElementById('voteMismatchBtn')
+];
+const googleMapsBtn = document.getElementById('googleMapsBtn');
 
 if (mapId) loadResult(mapId);
 
 async function loadResult(id) {
     const r = await fetch('/api/maps/' + id);
     if (!r.ok) {
-        showAlert('error', 'Картата не беше намерена.');
+        showAlert('error', texts.mapNotFound);
         return;
     }
 
     const d = await r.json();
     loadedMap = d;
 
-    document.getElementById('mapTitle').textContent = d.title ?? 'Карта';
-    document.getElementById('mapEmotion').textContent = d.dominantEmotion ?? '—';
-    document.getElementById('mapSummary').textContent = d.summary ?? 'Няма описание.';
+    document.getElementById('mapTitle').textContent = d.title ?? texts.mapFallback;
+    document.getElementById('mapEmotion').textContent = toBgEmotion(d.dominantEmotion) ?? '—';
+    document.getElementById('mapSummary').textContent = d.summary ?? texts.noDescription;
     document.getElementById('mapConfidence').textContent = Math.round((d.confidence ?? 0) * 100) + '%';
     document.getElementById('confFill').style.width = Math.round((d.confidence ?? 0) * 100) + '%';
 
@@ -101,22 +143,25 @@ async function loadResult(id) {
     const box = document.getElementById('recommendationsBox');
 
     if (!recs.length) {
-        box.innerHTML = '<div class="rec-item">Няма препоръки.</div>';
+        box.innerHTML = `<div class="rec-item">${texts.noRecommendations}</div>`;
+        setGoogleMapsTarget(null);
     } else {
         box.innerHTML = recs.map((x, i) => `
             <div class="rec-item" onclick="focusRec(${i})">
-                <div class="rec-item__name">${x.place?.name ?? 'Място'}</div>
+                <div class="rec-item__name">${x.place?.name ?? texts.placeFallback}</div>
                 <div class="rec-item__reason">${x.reason ?? ''}</div>
             </div>
         `).join('');
+        setGoogleMapsTarget(recs.find(hasRecommendationLocation) ?? null);
     }
 
     const bounds = [];
+    recommendationLayer.clearLayers();
     recs.forEach(x => {
         const lat = x.place?.lat;
         const lng = x.place?.lng;
-        if (lat && lng) {
-            L.marker([lat, lng]).addTo(resultMap)
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            L.marker([lat, lng]).addTo(recommendationLayer)
                 .bindPopup(`<strong>${x.place.name}</strong><br>${x.reason ?? ''}`);
             bounds.push([lat, lng]);
         }
@@ -134,24 +179,102 @@ async function loadResult(id) {
 
 function focusRec(index) {
     const rec = loadedMap?.recommendations?.[index];
-    if (!rec?.place?.lat || !rec?.place?.lng) return;
+    if (!Number.isFinite(rec?.place?.lat) || !Number.isFinite(rec?.place?.lng)) return;
+    setGoogleMapsTarget(rec);
     resultMap.setView([rec.place.lat, rec.place.lng], 15);
 }
 
-async function vote(isAccurate) {
-    if (!mapId) return;
-    const r = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            generatedMapId: mapId,
-            isAccurate: isAccurate,
-            note: isAccurate ? 'Пасва' : 'Не пасва'
-        })
-    });
+function hasRecommendationLocation(rec) {
+    return Number.isFinite(rec?.place?.lat) && Number.isFinite(rec?.place?.lng);
+}
 
-    if (r.ok) showAlert('ok', 'Благодарим за обратната връзка!');
-    else showAlert('error', 'Неуспешно изпращане на feedback.');
+function buildGoogleMapsUrl(rec) {
+    if (!hasRecommendationLocation(rec)) return '';
+
+    const lat = Number(rec.place.lat);
+    const lng = Number(rec.place.lng);
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
+function setGoogleMapsTarget(rec) {
+    currentGoogleMapsUrl = buildGoogleMapsUrl(rec);
+    googleMapsBtn.disabled = !currentGoogleMapsUrl;
+
+    const hint = document.getElementById('googleMapsHint');
+    if (!currentGoogleMapsUrl) {
+        hint.textContent = '';
+        return;
+    }
+
+    hint.textContent = texts.googleMapsReady + (rec?.place?.name ?? texts.googleMapsFallback);
+}
+
+function setVoteButtonsBusy(isBusy) {
+    feedbackSubmitting = isBusy;
+    voteButtons.forEach(btn => {
+        btn.disabled = isBusy;
+    });
+}
+
+function setSelectedVote(isAccurate) {
+    voteButtons.forEach(btn => btn.classList.remove('voted'));
+    document.getElementById(isAccurate ? 'voteMatchBtn' : 'voteMismatchBtn').classList.add('voted');
+}
+
+function showFeedbackStatus(type, message) {
+    const cls = type === 'ok' ? 'em-alert-ok' :
+                type === 'warn' ? 'em-alert-warn' : 'em-alert-error';
+
+    document.getElementById('feedbackStatusBox').innerHTML =
+        `<div class="em-alert ${cls} feedback-status">${message}</div>`;
+}
+
+function showActionStatus(type, message) {
+    const cls = type === 'ok' ? 'em-alert-ok' :
+                type === 'warn' ? 'em-alert-warn' : 'em-alert-error';
+
+    document.getElementById('actionStatusBox').innerHTML =
+        `<div class="em-alert ${cls} feedback-status">${message}</div>`;
+}
+
+async function vote(isAccurate) {
+    if (feedbackSubmitting) return;
+
+    if (!mapId) {
+        showFeedbackStatus('warn', texts.feedbackMissingMap);
+        return;
+    }
+
+    setVoteButtonsBusy(true);
+    showFeedbackStatus('ok', texts.feedbackSending);
+    let lockButtonsAfterSuccess = false;
+
+    try {
+        const r = await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                generatedMapId: mapId,
+                rating: isAccurate ? 5 : 2,
+                reaction: isAccurate ? 1 : 2,
+                comment: isAccurate ? texts.feedbackMatchComment : texts.feedbackMismatchComment
+            })
+        });
+
+        if (r.ok) {
+            setSelectedVote(isAccurate);
+            lockButtonsAfterSuccess = true;
+            showFeedbackStatus('ok', texts.feedbackThanks);
+        } else {
+            showFeedbackStatus('error', await readApiError(r, texts.feedbackFailed));
+        }
+    } catch {
+        showFeedbackStatus('error', texts.feedbackNetwork);
+    } finally {
+        if (!lockButtonsAfterSuccess) {
+            setVoteButtonsBusy(false);
+        }
+    }
 }
 
 document.getElementById('publicBtn').addEventListener('click', async () => {
@@ -159,24 +282,33 @@ document.getElementById('publicBtn').addEventListener('click', async () => {
 
     const r = await fetch('/api/maps/' + mapId + '/make-public', { method: 'POST' });
     if (!r.ok) {
-        showAlert('error', 'Неуспешно публикуване.');
+        showActionStatus('error', texts.makePublicFailed);
         return;
     }
 
     const d = await r.json();
     loadedPublicLink = window.location.origin + '/api/maps/public/' + d.publicSlug;
     document.getElementById('publicLinkBox').textContent = loadedPublicLink;
-    showAlert('ok', 'Картата вече е публична.');
+    showActionStatus('ok', texts.publicNow);
 });
 
 document.getElementById('copyBtn').addEventListener('click', async () => {
     if (!loadedPublicLink) {
-        showAlert('warn', 'Още няма публичен линк. Направи картата публична първо.');
+        showActionStatus('warn', texts.publicLinkMissing);
         return;
     }
 
     await navigator.clipboard.writeText(loadedPublicLink);
-    showAlert('ok', 'Линкът е копиран.');
+    showActionStatus('ok', texts.linkCopied);
+});
+
+googleMapsBtn.addEventListener('click', () => {
+    if (!currentGoogleMapsUrl) {
+        showActionStatus('warn', texts.googleMapsMissing);
+        return;
+    }
+
+    window.open(currentGoogleMapsUrl, '_blank', 'noopener,noreferrer');
 });
 
 function showAlert(type, message) {
@@ -185,6 +317,16 @@ function showAlert(type, message) {
 
     document.getElementById('alertBox').innerHTML =
         `<div class="em-alert ${cls}">${message}</div>`;
+}
+
+async function readApiError(response, fallbackMessage) {
+    const err = await response.json().catch(() => null);
+    if (err?.message) return err.message;
+    if (err?.errors) {
+        const first = Object.values(err.errors).flat().find(Boolean);
+        if (first) return first;
+    }
+    return fallbackMessage;
 }
 </script>
 }

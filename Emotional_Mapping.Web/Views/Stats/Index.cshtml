@@ -1,74 +1,95 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+
+@functions {
+IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
+
 @{
-    ViewData["Title"] = "Статистики";
+    ViewData["Title"] = T["Nav.Stats"];
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">Статистики</h1>
-    <p class="em-page-sub">Общ преглед на използването, емоциите и най-позитивните райони.</p>
+    <span class="em-page-header__icon">📊</span>
+    <div class="em-page-header__badge">📈 @T.Pick("Аналитика", "Analytics")</div>
+    <h1 class="em-page-title">@T.Pick("Статистики и анализ", "Statistics and analysis")</h1>
+    <p class="em-page-sub">@T.Pick("Най-честите емоции, най-позитивните райони и как хората усещат града — на едно място.", "The most common emotions, the most positive districts, and how people feel the city, all in one place.")</p>
 </div>
 
 <div class="em-card fade-up fade-up-1" style="margin-bottom:18px;">
     <div class="em-form-group" style="max-width:360px;margin-bottom:0;">
-        <label class="em-label">Град</label>
+        <label class="em-label">@T.Pick("Град", "City")</label>
         <select id="citySelect" class="em-select">
-            <option value="">Избери град</option>
+            <option value="">@T.Pick("Всички градове", "All cities")</option>
         </select>
     </div>
 </div>
 
 <div class="stats4 fade-up fade-up-2">
     <div class="stat-card">
-        <div class="stat-card__label">Общо AI заявки</div>
+        <div class="stat-card__label">@T.Pick("Общо AI заявки", "Total AI requests")</div>
         <div class="stat-card__value" id="statRequests">0</div>
-        <div class="stat-card__sub">за избрания град</div>
+        <div class="stat-card__sub" id="statScopeLabel">@T.Pick("за всички градове", "for all cities")</div>
     </div>
     <div class="stat-card">
-        <div class="stat-card__label">Общо точки</div>
+        <div class="stat-card__label">@T.Pick("Общо точки", "Total points")</div>
         <div class="stat-card__value" id="statPoints">0</div>
-        <div class="stat-card__sub">емоционални точки</div>
+        <div class="stat-card__sub">@T.Pick("емоционални точки", "emotional points")</div>
     </div>
     <div class="stat-card">
-        <div class="stat-card__label">Най-честа емоция</div>
+        <div class="stat-card__label">@T.Pick("Най-честа емоция", "Most common emotion")</div>
         <div class="stat-card__value" id="statTopEmotion">—</div>
-        <div class="stat-card__sub">доминиращо настроение</div>
+        <div class="stat-card__sub">@T.Pick("доминиращо настроение", "dominant mood")</div>
     </div>
     <div class="stat-card">
-        <div class="stat-card__label">Най-позитивен район</div>
+        <div class="stat-card__label">@T.Pick("Най-позитивен район", "Most positive district")</div>
         <div class="stat-card__value" id="statTopDistrict">—</div>
-        <div class="stat-card__sub">по district score</div>
+        <div class="stat-card__sub">@T.Pick("по district score", "by district score")</div>
     </div>
 </div>
 
 <div class="stats2 fade-up fade-up-3">
     <div class="em-card">
-        <div class="em-card__title">Най-чести емоции</div>
+        <div class="em-card__title">@T.Pick("Най-чести емоции", "Top emotions")</div>
         <div id="topEmotionsBox"></div>
     </div>
 
     <div class="em-card">
-        <div class="em-card__title">Райони по emotional score</div>
+        <div class="em-card__title">@T.Pick("Райони по emotional score", "Districts by emotional score")</div>
         <div id="districtScoresBox"></div>
     </div>
 </div>
 
 <div class="stats2 fade-up fade-up-4">
     <div class="em-card">
-        <div class="em-card__title">AI Dashboard</div>
+        <div class="em-card__title">@T.Pick("AI Табло", "AI Dashboard")</div>
         <div id="aiDashboardBox"></div>
     </div>
 
     <div class="em-card">
-        <div class="em-card__title">Timeline</div>
+        <div class="em-card__title">@T.Pick("Времева линия", "Timeline")</div>
         <div id="timelineBox"></div>
     </div>
 </div>
 
 @section Scripts {
 <script>
+const texts = {
+    citiesLoadError: @Js(T.Pick("Грешка при зареждане на градове", "Failed to load cities")),
+    loadError: @Js(T.Pick("Грешка при зареждане", "Failed to load")),
+    noData: @Js(T.Pick("Няма данни", "No data")),
+    forAllCities: @Js(T.Pick("за всички градове", "for all cities")),
+    forSelectedCity: @Js(T.Pick("за избрания град", "for the selected city")),
+    positive: @Js(T.Pick("Положителни", "Positive")),
+    negative: @Js(T.Pick("Отрицателни", "Negative")),
+    totalRequests: @Js(T.Pick("Общо заявки", "Total requests")),
+    topEmotions: @Js(T.Pick("Топ емоции", "Top emotions")),
+    topUsers: @Js(T.Pick("Топ потребители", "Top users"))
+};
 const citySelect = document.getElementById('citySelect');
 
 fetch('/api/cities')
-    .then(r => r.json())
+    .then(r => r.ok ? r.json() : [])
     .then(cities => {
         (cities || []).forEach(c => {
             const o = document.createElement('option');
@@ -76,48 +97,76 @@ fetch('/api/cities')
             o.textContent = c.name;
             citySelect.appendChild(o);
         });
+
+        citySelect.selectedIndex = 0;
+        loadStats();
+    })
+    .catch(() => {
+        resetStats();
+        document.getElementById('topEmotionsBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.citiesLoadError}</div></div>`;
+        document.getElementById('districtScoresBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.citiesLoadError}</div></div>`;
+        document.getElementById('aiDashboardBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.citiesLoadError}</div></div>`;
+        document.getElementById('timelineBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.citiesLoadError}</div></div>`;
     });
 
 citySelect.addEventListener('change', loadStats);
 
 async function loadStats() {
     const cityId = citySelect.value;
-    if (!cityId) return;
+    const statsUrl = cityId ? '/api/stats?cityId=' + cityId : '/api/stats';
+    const districtUrl = cityId ? '/api/stats/district-scores?cityId=' + cityId : '/api/stats/district-scores';
+    const timelineUrl = cityId ? '/api/stats/timeline?cityId=' + cityId : '/api/stats/timeline';
 
-    const [statsRes, districtRes, aiRes, timelineRes] = await Promise.all([
-        fetch('/api/stats?cityId=' + cityId),
-        fetch('/api/stats/district-scores?cityId=' + cityId),
-        fetch('/api/stats/ai-dashboard'),
-        fetch('/api/stats/timeline?cityId=' + cityId)
-    ]);
+    try {
+        const [statsRes, districtRes, aiRes, timelineRes] = await Promise.all([
+            fetch(statsUrl),
+            fetch(districtUrl),
+            fetch('/api/stats/dashboard'),
+            fetch(timelineUrl)
+        ]);
 
-    const stats = statsRes.ok ? await statsRes.json() : null;
-    const districts = districtRes.ok ? await districtRes.json() : [];
-    const ai = aiRes.ok ? await aiRes.json() : null;
-    const timeline = timelineRes.ok ? await timelineRes.json() : [];
+        const stats = statsRes.ok ? await statsRes.json() : null;
+        const districts = districtRes.ok ? await districtRes.json() : [];
+        const ai = aiRes.ok ? await aiRes.json() : null;
+        const timeline = timelineRes.ok ? await timelineRes.json() : [];
 
-    document.getElementById('statRequests').textContent = stats?.totalRequests ?? 0;
-    document.getElementById('statPoints').textContent = stats?.totalPoints ?? 0;
-    document.getElementById('statTopEmotion').textContent = stats?.topEmotions?.[0]?.key ?? '—';
-    document.getElementById('statTopDistrict').textContent = districts?.[0]?.districtName ?? '—';
+        document.getElementById('statRequests').textContent = stats?.totalRequests ?? 0;
+        document.getElementById('statPoints').textContent = stats?.totalPoints ?? 0;
+        document.getElementById('statTopEmotion').textContent = toBgEmotion(stats?.topEmotions?.[0]?.key) ?? '—';
+        document.getElementById('statTopDistrict').textContent = districts?.[0]?.districtName ?? '—';
+        document.getElementById('statScopeLabel').textContent = cityId ? texts.forSelectedCity : texts.forAllCities;
 
-    renderTopEmotions(stats?.topEmotions ?? []);
-    renderDistrictScores(districts ?? []);
-    renderAiDashboard(ai);
-    renderTimeline(timeline ?? []);
+        renderTopEmotions(stats?.topEmotions ?? []);
+        renderDistrictScores(districts ?? []);
+        renderAiDashboard(ai);
+        renderTimeline(timeline ?? []);
+    } catch {
+        resetStats();
+        document.getElementById('topEmotionsBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.loadError}</div></div>`;
+        document.getElementById('districtScoresBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.loadError}</div></div>`;
+        document.getElementById('aiDashboardBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.loadError}</div></div>`;
+        document.getElementById('timelineBox').innerHTML = `<div class="empty"><div class="empty__title">${texts.loadError}</div></div>`;
+    }
+}
+
+function resetStats() {
+    document.getElementById('statRequests').textContent = '0';
+    document.getElementById('statPoints').textContent = '0';
+    document.getElementById('statTopEmotion').textContent = '—';
+    document.getElementById('statTopDistrict').textContent = '—';
 }
 
 function renderTopEmotions(items) {
     const box = document.getElementById('topEmotionsBox');
     if (!items.length) {
-        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        box.innerHTML = `<div class="empty"><div class="empty__title">${texts.noData}</div></div>`;
         return;
     }
 
     const max = Math.max(...items.map(x => x.value));
     box.innerHTML = items.map(x => `
         <div class="ebar-row">
-            <div class="ebar-lbl">${x.key}</div>
+            <div class="ebar-lbl">${toBgEmotion(x.key)}</div>
             <div class="ebar-track">
                 <div class="ebar-fill" style="width:${(x.value / max) * 100}%;background:linear-gradient(90deg,#89d957,#c9e265)"></div>
             </div>
@@ -129,7 +178,7 @@ function renderTopEmotions(items) {
 function renderDistrictScores(items) {
     const box = document.getElementById('districtScoresBox');
     if (!items.length) {
-        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        box.innerHTML = `<div class="empty"><div class="empty__title">${texts.noData}</div></div>`;
         return;
     }
 
@@ -137,7 +186,7 @@ function renderDistrictScores(items) {
         <div class="drow">
             <div>
                 <strong>${x.districtName}</strong><br>
-                <small class="text-muted">Positive: ${x.positiveScore} • Negative: ${x.negativeScore}</small>
+                <small class="text-muted">${texts.positive}: ${x.positiveScore} • ${texts.negative}: ${x.negativeScore}</small>
             </div>
             <span class="em-badge em-badge-super">${x.finalScore}</span>
         </div>
@@ -147,19 +196,19 @@ function renderDistrictScores(items) {
 function renderAiDashboard(ai) {
     const box = document.getElementById('aiDashboardBox');
     if (!ai) {
-        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        box.innerHTML = `<div class="empty"><div class="empty__title">${texts.noData}</div></div>`;
         return;
     }
 
     box.innerHTML = `
-        <div class="drow"><span>Общо заявки</span><strong>${ai.totalRequests ?? 0}</strong></div>
+        <div class="drow"><span>${texts.totalRequests}</span><strong>${ai.totalRequests ?? 0}</strong></div>
         <div style="margin-top:12px;">
-            <div class="em-card__title" style="margin-bottom:10px;">Top emotions</div>
-            ${(ai.topEmotions ?? []).map(x => `<div class="drow"><span>${x.emotion}</span><strong>${x.count}</strong></div>`).join('')}
+            <div class="em-card__title" style="margin-bottom:10px;">${texts.topEmotions}</div>
+            ${(ai.topEmotions ?? []).map(x => `<div class="drow"><span>${toBgEmotion(x.emotion)}</span><strong>${x.count}</strong></div>`).join('')}
         </div>
         <div style="margin-top:12px;">
-            <div class="em-card__title" style="margin-bottom:10px;">Top users</div>
-            ${(ai.topUsers ?? []).map(x => `<div class="drow"><span>${x.userId}</span><strong>${x.requests}</strong></div>`).join('')}
+            <div class="em-card__title" style="margin-bottom:10px;">${texts.topUsers}</div>
+            ${(ai.topUsers ?? []).map(x => `<div class="drow"><span>${x.userEmail || x.userId}</span><strong>${x.requests}</strong></div>`).join('')}
         </div>
     `;
 }
@@ -167,13 +216,14 @@ function renderAiDashboard(ai) {
 function renderTimeline(items) {
     const box = document.getElementById('timelineBox');
     if (!items.length) {
-        box.innerHTML = '<div class="empty"><div class="empty__title">Няма данни</div></div>';
+        box.innerHTML = `<div class="empty"><div class="empty__title">${texts.noData}</div></div>`;
         return;
     }
 
     const grouped = {};
     items.forEach(x => {
-        grouped[x.timeLabel] = (grouped[x.timeLabel] || 0) + x.count;
+        const label = window.GeoFeelI18n.timeLabel(x.timeLabel);
+        grouped[label] = (grouped[label] || 0) + x.count;
     });
 
     const labels = Object.keys(grouped);

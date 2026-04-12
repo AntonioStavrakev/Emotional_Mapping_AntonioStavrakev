@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = T.Pick("Плащането е отказано", "Payment was canceled");
+}
+
+<div class="em-page-header fade-up">
+    <span class="em-page-header__icon">!</span>
+    <div class="em-page-header__badge">Stripe</div>
+    <h1 class="em-page-title">@T.Pick("Плащането е отказано", "Payment was canceled")</h1>
+    <p class="em-page-sub">@T.Pick("Stripe checkout беше прекъснат. Можеш да опиташ отново, когато си готов.", "The Stripe checkout was interrupted. You can try again whenever you're ready.")</p>
+</div>
+
+<div class="em-card fade-up fade-up-1">
+    <div class="em-alert em-alert-warn">@T.Pick("Не е направена промяна по твоя акаунт.", "No changes were made to your account.")</div>
+</div>
+
+<div class="fade-up fade-up-2" style="margin-top:18px;display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="/Home" class="btn-em btn-em-primary">@T.Pick("Назад към началото", "Back to home")</a>
+    <a href="/Map/Generate" class="btn-em btn-em-ghost">@T.Pick("Към AI генератора", "Go to AI generator")</a>
+</div>

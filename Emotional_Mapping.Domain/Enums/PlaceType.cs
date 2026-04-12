@@ -52,5 +52,9 @@ public enum PlaceType
     Office = 100,
     Coworking = 101,
 
+    Beach = 110,
+    Street = 111,
+    Nightlife = 112,
+
     Other = 999
 }

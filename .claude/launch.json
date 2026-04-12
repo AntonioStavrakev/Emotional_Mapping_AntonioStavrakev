@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "GEOFEEL Web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Emotional_Mapping.Web/Emotional_Mapping.Web.csproj", "--launch-profile", "http"],
+      "port": 5202
+    },
+    {
+      "name": "GEOFEEL API",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "Emotional_Mapping.Api/Emotional_Mapping.Api.csproj", "--launch-profile", "http"],
+      "port": 5052
+    }
+  ]
+}

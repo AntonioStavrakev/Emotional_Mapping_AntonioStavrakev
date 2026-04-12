@@ -20,6 +20,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Feedback> Feedbacks => Set<Feedback>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<SavedRoute> SavedRoutes => Set<SavedRoute>();
+    public DbSet<AiCreditPack> AiCreditPacks => Set<AiCreditPack>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {

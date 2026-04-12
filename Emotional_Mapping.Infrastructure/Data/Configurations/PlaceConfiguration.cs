@@ -25,7 +25,7 @@ public class PlaceConfiguration : IEntityTypeConfiguration<Place>
             p.Property(x => x.Lng).HasColumnName("Lng").IsRequired();
         });
 
-        b.HasOne(x => x.City).WithMany().HasForeignKey(x => x.CityId);
+        b.HasOne(x => x.City).WithMany(x => x.Places).HasForeignKey(x => x.CityId);
         b.HasOne(x => x.District).WithMany().HasForeignKey(x => x.DistrictId);
     }   
 }

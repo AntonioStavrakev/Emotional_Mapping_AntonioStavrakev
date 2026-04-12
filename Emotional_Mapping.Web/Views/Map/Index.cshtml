@@ -1,5 +1,12 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
+
+@functions {
+IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
+
 @{
-ViewData["Title"] = "Карта";
+ViewData["Title"] = T["Nav.Map"];
 }
 
 @section Styles {
@@ -7,15 +14,17 @@ ViewData["Title"] = "Карта";
 }
 
 <div class="em-page-header fade-up">
-    <h1 class="em-page-title">Публична емоционална карта</h1>
-    <p class="em-page-sub">Разгледай публични карти и общи емоционални точки по градове.</p>
+    <span class="em-page-header__icon">🌆</span>
+    <div class="em-page-header__badge">📍 @T.Pick("Публична карта", "Public map")</div>
+    <h1 class="em-page-title">@T.Pick("Емоционална карта на града", "Emotional city map")</h1>
+    <p class="em-page-sub">@T.Pick("Разгледай как хората усещат градските пространства — публични карти, емоции и препоръки.", "Explore how people feel urban spaces through public maps, emotions, and recommendations.")</p>
 </div>
 
 <div class="em-card fade-up fade-up-1" style="margin-bottom:18px;">
     <div class="em-form-group" style="max-width:360px;margin-bottom:0;">
-        <label class="em-label">Град</label>
+        <label class="em-label">@T.Pick("Град", "City")</label>
         <select id="citySelect" class="em-select">
-            <option value="">Избери град</option>
+            <option value="">@T.Pick("Избери град", "Select a city")</option>
         </select>
     </div>
 </div>
@@ -26,59 +35,131 @@ ViewData["Title"] = "Карта";
     </div>
 
     <aside class="filter-panel">
-        <div class="filter-panel__title">Публични карти</div>
+        <div class="filter-panel__title">@T.Pick("Публични карти", "Public maps")</div>
         <div id="publicMapsList" class="filter-list"></div>
     </aside>
 </div>
 
 @section Scripts {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    const citySelect = document.getElementById('citySelect');
-    const publicMapsList = document.getElementById('publicMapsList');
+const texts = {
+    approximateLocation: @Js(T.Pick("Приблизителна локация", "Approximate location")),
+    exactLocation: @Js(T.Pick("Точна локация", "Precise location")),
+    loadPublicMapsFailed: @Js(T.Pick("Неуспешно зареждане на публичните карти.", "Failed to load public maps.")),
+    noPublicMaps: @Js(T.Pick("Няма публични карти", "No public maps")),
+    mapTitleFallback: @Js(T.Pick("Карта", "Map")),
+    loadPublicMapsError: @Js(T.Pick("Възникна грешка при зареждане на публичните карти.", "An error occurred while loading public maps."))
+};
+const citySelect = document.getElementById('citySelect');
+const publicMapsList = document.getElementById('publicMapsList');
 
-    const map = L.map('mapCanvas').setView([42.6977, 23.3219], 7);
+const map = L.map('mapCanvas');
+let cityCatalog = [];
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        maxZoom: 19
-    }).addTo(map);
+// ✅ нормална карта
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxZoom: 19
+}).addTo(map);
 
-    let mapMarkers = [];
+let mapMarkers = [];
 
-    fetch('/api/cities')
-        .then(r => r.json())
-        .then(cities => {
-            (cities || []).forEach(c => {
-                const o = document.createElement('option');
-                o.value = c.id;
-                o.textContent = c.name;
-                o.dataset.lat = c.center?.lat ?? c.latitude ?? c.lat ?? '';
-                o.dataset.lng = c.center?.lng ?? c.longitude ?? c.lng ?? '';
-                citySelect.appendChild(o);
-            });
+function showListMessage(message, isError) {
+    publicMapsList.innerHTML = `<div class="fi${isError ? ' fi--danger' : ''}">${message}</div>`;
+}
+
+async function locateVisitor() {
+    const location = await window.GeoFeelLocation.getBestEffortLocation({
+        allowIpFallback: true,
+    });
+
+    if (!location.ok) {
+        map.setView([42.6977, 23.3219], 12);
+        return;
+    }
+
+    map.setView([location.lat, location.lng], location.source === 'ip' ? 12 : 13);
+
+    L.marker([location.lat, location.lng])
+        .addTo(map)
+        .bindPopup(`📍 ${location.locationName || (location.source === 'ip' ? texts.approximateLocation : texts.exactLocation)}`)
+        .openPopup();
+
+    if (cityCatalog.length) {
+        window.GeoFeelLocation.syncNearestCity(
+            citySelect,
+            cityCatalog,
+            location.lat,
+            location.lng,
+            Number.isFinite(location.accuracyMeters) ? location.accuracyMeters : 10000,
+            {
+                skipCenter: true,
+                skipStatus: true,
+                maxDistanceKm: location.source === 'ip' ? 90 : undefined
+            }
+        );
+    }
+}
+
+// ✅ 2. LOAD CITIES
+fetch('/api/cities')
+    .then(r => r.json())
+    .then(cities => {
+        cityCatalog = cities || [];
+        cityCatalog.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id;
+            o.textContent = c.name;
+
+            o.dataset.lat = c.center?.lat ?? '';
+            o.dataset.lng = c.center?.lng ?? '';
+            o.dataset.zoom = c.zoom ?? 12;
+
+            citySelect.appendChild(o);
         });
+        locateVisitor();
+    })
+    .catch(() => {
+        locateVisitor();
+    });
 
-    citySelect.addEventListener('change', loadPublicMaps);
+// ✅ 3. CHANGE CITY
+citySelect.addEventListener('change', async function () {
 
-    async function loadPublicMaps() {
-        const cityId = citySelect.value;
-        if (!cityId) return;
+    const cityId = this.value;
+    if (!cityId) {
+        publicMapsList.innerHTML = '';
+        return;
+    }
 
-        const opt = citySelect.options[citySelect.selectedIndex];
-        if (opt.dataset.lat && opt.dataset.lng) {
-            map.setView([+opt.dataset.lat, +opt.dataset.lng], 12, { animate: true });
+    const opt = this.options[this.selectedIndex];
+
+    const lat = parseFloat(opt.dataset.lat);
+    const lng = parseFloat(opt.dataset.lng);
+    const zoom = parseInt(opt.dataset.zoom) || 12;
+
+    if (lat && lng) {
+        map.setView([lat, lng], zoom, { animate: true });
+    }
+
+    // clear markers
+    mapMarkers.forEach(m => map.removeLayer(m));
+    mapMarkers = [];
+    publicMapsList.innerHTML = '';
+
+    try {
+        const r = await fetch('/api/maps/public?cityId=' + cityId);
+        if (!r.ok) {
+            showListMessage(texts.loadPublicMapsFailed, true);
+            return;
         }
 
-        mapMarkers.forEach(m => map.removeLayer(m));
-        mapMarkers = [];
-        publicMapsList.innerHTML = '';
-
-        const r = await fetch('/api/maps/public?cityId=' + cityId);
-        const maps = r.ok ? await r.json() : [];
+        const maps = await r.json();
 
         if (!maps.length) {
-            publicMapsList.innerHTML = '<div class="fi">Няма публични карти</div>';
+            showListMessage(texts.noPublicMaps, false);
             return;
         }
 
@@ -86,19 +167,24 @@ ViewData["Title"] = "Карта";
             const el = document.createElement('a');
             el.className = 'fi';
             el.href = '/Map/Result?mapId=' + m.id;
-            el.innerHTML = `<span class="cdot" style="background:#89d957"></span> ${m.title ?? 'Карта'}`;
+            el.innerHTML = `<span class="cdot" style="background:#89d957"></span> ${m.title ?? texts.mapTitleFallback}`;
             publicMapsList.appendChild(el);
 
             if (m.recommendations) {
                 m.recommendations.forEach(rec => {
                     if (rec.place?.lat && rec.place?.lng) {
-                        const marker = L.marker([rec.place.lat, rec.place.lng]).addTo(map)
+                        const marker = L.marker([rec.place.lat, rec.place.lng])
+                            .addTo(map)
                             .bindPopup(`<strong>${rec.place.name}</strong><br>${rec.reason ?? ''}`);
+
                         mapMarkers.push(marker);
                     }
                 });
             }
         });
+    } catch (e) {
+        showListMessage(texts.loadPublicMapsError, true);
     }
+});
 </script>
 }
