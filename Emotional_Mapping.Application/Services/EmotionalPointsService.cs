@@ -91,7 +91,7 @@ public class EmotionalPointsService
         var point = await _repo.GetAsync(id, ct)
                     ?? throw new InvalidOperationException("Точката не е намерена.");
 
-        if (_user.UserId != point.UserId && !_user.IsInRole("Admin") && !_user.IsInRole("Moderator"))
+        if (_user.UserId != point.UserId && !_user.IsInRole("Admin"))
         {
             throw new InvalidOperationException("Нямаш право да изтриеш тази точка.");
         }
