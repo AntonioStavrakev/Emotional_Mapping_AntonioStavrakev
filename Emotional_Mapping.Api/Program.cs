@@ -13,8 +13,16 @@ using Microsoft.AspNetCore.Identity;
 using System.Text.Json.Serialization;
 using Emotional_Mapping.Api.Middleware;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddControllers()
     .AddJsonOptions(opts =>
     {
@@ -37,6 +45,7 @@ builder.Services.AddEmotionalMappingInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseSwagger();
 app.UseSwaggerUI();
 

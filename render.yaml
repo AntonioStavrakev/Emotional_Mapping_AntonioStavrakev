@@ -1,0 +1,56 @@
+services:
+  - type: web
+    name: emotional-mapping-api-antonio
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Emotional_Mapping.Api/Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /swagger/index.html
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        sync: false
+      - key: OpenAI__ApiKey
+        sync: false
+      - key: ExternalPlaces__Provider
+        value: google
+      - key: GooglePlaces__ApiKey
+        sync: false
+      - key: Stripe__SecretKey
+        sync: false
+      - key: Stripe__PublishableKey
+        sync: false
+      - key: Stripe__WebhookSecret
+        sync: false
+
+  - type: web
+    name: emotional-mapping-web-antonio
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Emotional_Mapping.Web/Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ApiBaseUrl
+        value: https://emotional-mapping-api-antonio.onrender.com
+      - key: Email__SmtpHost
+        value: smtp.gmail.com
+      - key: Email__SmtpPort
+        value: "587"
+      - key: Email__Username
+        sync: false
+      - key: Email__Password
+        sync: false
+      - key: Email__To
+        sync: false
+      - key: Email__EnableSsl
+        value: "true"
+      - key: Authentication__Google__ClientId
+        sync: false
+      - key: Authentication__Google__ClientSecret
+        sync: false
