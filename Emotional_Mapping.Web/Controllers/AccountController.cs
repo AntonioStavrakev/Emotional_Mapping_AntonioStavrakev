@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -70,10 +71,10 @@ public class AccountController : Controller
         var raw = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
-            
-            ViewBag.Error = string.IsNullOrWhiteSpace(raw)
-                ? "Невалиден имейл или парола."
-                : raw;
+            ViewBag.Error = ExtractApiError(
+                raw,
+                "Невалиден имейл или парола.",
+                response.StatusCode);
             return View(model);
         }
         
@@ -140,7 +141,10 @@ public class AccountController : Controller
         if (!response.IsSuccessStatusCode)
         {
             var raw = await response.Content.ReadAsStringAsync();
-            ViewBag.Error = ExtractApiError(raw);
+            ViewBag.Error = ExtractApiError(
+                raw,
+                "Грешка при регистрация.",
+                response.StatusCode);
             return View(model);
         }
 
@@ -526,14 +530,22 @@ public class AccountController : Controller
             });
     }
 
-    private static string ExtractApiError(string raw)
+    private static string ExtractApiError(string raw, string fallback, HttpStatusCode? statusCode = null)
     {
         if (string.IsNullOrWhiteSpace(raw))
-            return "Грешка при регистрация.";
+            return BuildFriendlyFallback(statusCode, fallback);
 
         try
         {
             using var doc = JsonDocument.Parse(raw);
+
+            if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                doc.RootElement.TryGetProperty("message", out var messageProp))
+            {
+                var objectMessage = messageProp.GetString();
+                if (!string.IsNullOrWhiteSpace(objectMessage))
+                    return NormalizeApiError(objectMessage, fallback, statusCode);
+            }
 
             if (doc.RootElement.ValueKind == JsonValueKind.Array)
             {
@@ -541,12 +553,23 @@ public class AccountController : Controller
 
                 foreach (var item in doc.RootElement.EnumerateArray())
                 {
-                    if (item.TryGetProperty("description", out var desc))
+                    if (item.ValueKind == JsonValueKind.String)
+                    {
+                        messages.Add(item.GetString() ?? "");
+                        continue;
+                    }
+
+                    if (item.ValueKind == JsonValueKind.Object &&
+                        item.TryGetProperty("description", out var desc))
+                    {
                         messages.Add(desc.GetString() ?? "");
+                    }
                 }
 
                 var combined = string.Join(" ", messages.Where(x => !string.IsNullOrWhiteSpace(x)));
-                return string.IsNullOrWhiteSpace(combined) ? "Грешка при регистрация." : combined;
+                return string.IsNullOrWhiteSpace(combined)
+                    ? BuildFriendlyFallback(statusCode, fallback)
+                    : NormalizeApiError(combined, fallback, statusCode);
             }
         }
         catch
@@ -554,6 +577,35 @@ public class AccountController : Controller
             // ignore parse error
         }
 
-        return raw;
+        return NormalizeApiError(raw, fallback, statusCode);
+    }
+
+    private static string NormalizeApiError(string raw, string fallback, HttpStatusCode? statusCode)
+    {
+        var decoded = WebUtility.HtmlDecode(raw).Trim();
+        var singleLine = string.Join(" ", decoded
+            .Split(new[] { '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries))
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(singleLine))
+            return BuildFriendlyFallback(statusCode, fallback);
+
+        if (statusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout)
+            return "Сървърът временно не е наличен. Опитай отново след няколко секунди.";
+
+        if (singleLine.Contains("error code: 502", StringComparison.OrdinalIgnoreCase) ||
+            singleLine.Contains("bad gateway", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Сървърът временно не е наличен. Опитай отново след няколко секунди.";
+        }
+
+        return singleLine;
+    }
+
+    private static string BuildFriendlyFallback(HttpStatusCode? statusCode, string fallback)
+    {
+        return statusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout
+            ? "Сървърът временно не е наличен. Опитай отново след няколко секунди."
+            : fallback;
     }
 }

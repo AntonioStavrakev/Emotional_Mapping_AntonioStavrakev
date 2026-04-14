@@ -1,4 +1,10 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
 @model Emotional_Mapping.Web.Models.LoginViewModel
+
+@functions {
+IHtmlContent Js(string value) => Html.Raw(JsonSerializer.Serialize(value));
+}
 
 @{
     ViewData["Title"] = T["Auth.Login"];
@@ -78,10 +84,10 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         const loginPasswordTexts = {
-            show: '@T.Pick("Покажи", "Show")',
-            hide: '@T.Pick("Скрий", "Hide")',
-            showAria: '@T.Pick("Покажи паролата", "Show password")',
-            hideAria: '@T.Pick("Скрий паролата", "Hide password")'
+            show: @Js(T.Pick("Покажи", "Show")),
+            hide: @Js(T.Pick("Скрий", "Hide")),
+            showAria: @Js(T.Pick("Покажи паролата", "Show password")),
+            hideAria: @Js(T.Pick("Скрий паролата", "Hide password"))
         };
 
         document.querySelectorAll('[data-toggle-password]').forEach(function (button) {
