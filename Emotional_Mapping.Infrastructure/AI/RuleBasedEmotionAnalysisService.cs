@@ -44,6 +44,11 @@ public class RuleBasedEmotionAnalysisService : IAiEmotionService
         });
     }
 
+    public Task<string?> TranslateTextAsync(string? text, string targetLanguage, CancellationToken ct)
+    {
+        return Task.FromResult(text);
+    }
+
     private static EmotionType DetectEmotion(EmotionType? hint, string text)
     {
         return hint ??

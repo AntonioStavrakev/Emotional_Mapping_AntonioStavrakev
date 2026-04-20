@@ -53,7 +53,7 @@ ViewData["Title"] = T["Nav.MyMaps"];
             grid.innerHTML = items.map(m => `
             <a class="mcard" href="/Map/Result?mapId=${m.id}">
                 <div class="mcard__hdr">
-                    <div class="mcard__title">${m.title ?? texts.mapFallback}</div>
+                    <div class="mcard__title">${window.GeoFeelI18n.mapTitle(m.title ?? texts.mapFallback)}</div>
                     <span class="em-badge em-badge-super">${toBgEmotion(m.dominantEmotion) ?? '—'}</span>
                 </div>
                 <div class="mcard__summ">${m.summary ?? texts.noDescription}</div>

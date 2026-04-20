@@ -27,6 +27,14 @@ public class MapController : Controller
         return View();
     }
 
+    // GET /Map/Public/{slug}
+    [AllowAnonymous]
+    [HttpGet("/Map/Public/{slug}")]
+    public IActionResult Public(string slug)
+    {
+        return View("Result");
+    }
+
     // GET /Map/MyMaps — само за регистрирани
     [Authorize]
     public IActionResult MyMaps()

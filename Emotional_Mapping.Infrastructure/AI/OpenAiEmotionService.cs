@@ -103,9 +103,71 @@ public class OpenAiEmotionService : IAiEmotionService
         }
     }
 
+    public async Task<string?> TranslateTextAsync(string? text, string targetLanguage, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return text;
+
+        var normalizedTargetLanguage = string.Equals(targetLanguage, "en", StringComparison.OrdinalIgnoreCase)
+            ? "en"
+            : "bg";
+
+        try
+        {
+            var apiKey = !string.IsNullOrWhiteSpace(_opt.ApiKey)
+                ? _opt.ApiKey
+                : Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return text;
+
+            var http = _httpFactory.CreateClient("openai");
+            var prompt = BuildTranslationPrompt(text, normalizedTargetLanguage);
+
+            var body = new ResponsesRequest
+            {
+                Model = _opt.Model,
+                Input = prompt,
+                Temperature = 0.1
+            };
+
+            var resp = await http.PostAsJsonAsync("responses", body, JsonOpts, ct);
+            resp.EnsureSuccessStatusCode();
+
+            var raw = await resp.Content.ReadFromJsonAsync<ResponsesResponse>(JsonOpts, ct)
+                      ?? throw new InvalidOperationException("OpenAI response is empty.");
+
+            return string.IsNullOrWhiteSpace(raw.OutputText)
+                ? text
+                : raw.OutputText.Trim();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Text translation failed for target language {TargetLanguage}. Returning original text.", normalizedTargetLanguage);
+            return text;
+        }
+    }
+
     private static string BuildPrompt(AiAnalysisInput input)
     {
         return IsEnglish(input) ? BuildEnglishPrompt(input) : BuildBulgarianPrompt(input);
+    }
+
+    private static string BuildTranslationPrompt(string text, string targetLanguage)
+    {
+        var targetLabel = targetLanguage == "en" ? "English" : "Bulgarian";
+        return $@"
+Translate the following user-facing UI text into {targetLabel}.
+
+Rules:
+- Preserve the meaning and tone.
+- Keep it concise and natural.
+- Return only the translated text.
+- Do not add quotes, labels, or explanations.
+
+Text:
+{text}
+        ".Trim();
     }
 
     private static bool IsEnglish(AiAnalysisInput input)
@@ -665,7 +727,7 @@ IMPORTANT:
         public object Input { get; set; } = "";
         public double Temperature { get; set; } = 0.2;
 
-        public ResponseTextOptions Text { get; set; } = new();
+        public ResponseTextOptions? Text { get; set; }
     }
 
     private sealed class ResponseTextOptions

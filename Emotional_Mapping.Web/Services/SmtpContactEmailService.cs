@@ -1,72 +1,68 @@
+using System;
 using System.Net;
 using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Emotional_Mapping.Web.Services;
 
 public class SmtpContactEmailService : IContactEmailService
 {
     private readonly IConfiguration _config;
+    private readonly ILogger<SmtpContactEmailService> _logger;
 
-    public SmtpContactEmailService(IConfiguration config)
+    public SmtpContactEmailService(IConfiguration config, ILogger<SmtpContactEmailService> logger)
     {
         _config = config;
+        _logger = logger;
     }
 
     public async Task SendAsync(string fromName, string fromEmail, string subject, string message)
     {
-        var host = _config["Email:SmtpHost"];
-        var port = int.Parse(_config["Email:SmtpPort"] ?? "587");
-        var username = _config["Email:Username"];
-        var password = _config["Email:Password"];
-        var to = _config["Email:To"];
-        var enableSsl = bool.Parse(_config["Email:EnableSsl"] ?? "true");
+        var settings = GetSettings();
+        var normalizedSubject = string.IsNullOrWhiteSpace(subject) ? "Ново съобщение от GEOFEEL" : subject.Trim();
+        var normalizedName = string.IsNullOrWhiteSpace(fromName) ? "Анонимен потребител" : fromName.Trim();
+        var normalizedMessage = string.IsNullOrWhiteSpace(message) ? "(празно съобщение)" : message.Trim();
 
-        using var client = new SmtpClient(host!, port)
-        {
-            Credentials = new NetworkCredential(username, password),
-            EnableSsl = enableSsl
-        };
-
+        using var client = CreateClient(settings);
         using var mail = new MailMessage
         {
-            From = new MailAddress(username!, "GEOFEEL Contact"),
-            Subject = string.IsNullOrWhiteSpace(subject) ? "Ново съобщение от GEOFEEL" : subject,
+            From = new MailAddress(settings.Username, "GEOFEEL Contact"),
+            Subject = normalizedSubject,
             Body =
                 $@"Ново съобщение от контакт формата:
 
-                    Име: {fromName}
-                    Имейл: {fromEmail}
+Име: {normalizedName}
+Имейл: {fromEmail}
 
-                    Съобщение:
-                    {message}",
+Съобщение:
+{normalizedMessage}",
             IsBodyHtml = false
         };
 
-        mail.To.Add(to!);
-        mail.ReplyToList.Add(new MailAddress(fromEmail, fromName));
+        mail.To.Add(settings.To);
+        mail.ReplyToList.Add(new MailAddress(fromEmail.Trim(), normalizedName));
 
-        await client.SendMailAsync(mail);
+        try
+        {
+            await client.SendMailAsync(mail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SMTP send failed for contact form message to {Recipient}.", settings.To);
+            throw;
+        }
     }
 
     public async Task SendSystemEmailAsync(string toEmail, string subject, string htmlBody)
     {
-        var host = _config["Email:SmtpHost"];
-        var port = int.Parse(_config["Email:SmtpPort"] ?? "587");
-        var username = _config["Email:Username"];
-        var password = _config["Email:Password"];
-        var enableSsl = bool.Parse(_config["Email:EnableSsl"] ?? "true");
+        var settings = GetSettings();
 
-        using var client = new SmtpClient(host!, port)
-        {
-            Credentials = new NetworkCredential(username, password),
-            EnableSsl = enableSsl
-        };
-
+        using var client = CreateClient(settings);
         using var mail = new MailMessage
         {
-            From = new MailAddress(username!, "GEOFEEL"),
+            From = new MailAddress(settings.Username, "GEOFEEL"),
             Subject = subject,
             Body = htmlBody,
             IsBodyHtml = true
@@ -74,6 +70,63 @@ public class SmtpContactEmailService : IContactEmailService
 
         mail.To.Add(toEmail);
 
-        await client.SendMailAsync(mail);
+        try
+        {
+            await client.SendMailAsync(mail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SMTP send failed for system email to {Recipient}.", toEmail);
+            throw;
+        }
     }
+
+    private SmtpClient CreateClient(ContactEmailSettings settings)
+    {
+        return new SmtpClient(settings.Host, settings.Port)
+        {
+            DeliveryMethod = SmtpDeliveryMethod.Network,
+            UseDefaultCredentials = false,
+            Credentials = new NetworkCredential(settings.Username, settings.Password),
+            EnableSsl = settings.EnableSsl
+        };
+    }
+
+    private ContactEmailSettings GetSettings()
+    {
+        var host = GetRequiredSetting("Email:SmtpHost");
+        var username = GetRequiredSetting("Email:Username");
+        var password = GetRequiredSetting("Email:Password");
+        var to = GetRequiredSetting("Email:To");
+
+        var portValue = _config["Email:SmtpPort"];
+        if (!int.TryParse(portValue, out var port))
+        {
+            port = 587;
+        }
+
+        var enableSslValue = _config["Email:EnableSsl"];
+        var enableSsl = !bool.TryParse(enableSslValue, out var parsedEnableSsl) || parsedEnableSsl;
+
+        return new ContactEmailSettings(host, port, username, password, to, enableSsl);
+    }
+
+    private string GetRequiredSetting(string key)
+    {
+        var value = _config[key];
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value.Trim();
+        }
+
+        throw new InvalidOperationException($"Липсва задължителна email настройка: {key}");
+    }
+
+    private sealed record ContactEmailSettings(
+        string Host,
+        int Port,
+        string Username,
+        string Password,
+        string To,
+        bool EnableSsl);
 }

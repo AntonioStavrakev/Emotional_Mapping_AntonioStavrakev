@@ -11,8 +11,8 @@ namespace Emotional_Mapping.Application.Services;
 
 public class MapGenerationService
 {
-    private const int FreeDailyLimit = 10;
-    private const int PremiumDailyLimit = 100;
+    private const int FreeDailyLimit = 3;
+    private const int PremiumDailyLimit = 10;
 
     private readonly ICityRepository _cities;
     private readonly IPlaceRepository _places;

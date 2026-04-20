@@ -334,7 +334,7 @@ async function requestDeviceLocation(useAsSelection, userInitiated) {
         }
     );
 
-    var cityHint = nearestCity ? ' ' + texts.nearestCity + ' ' + nearestCity.city.name + '.' : '';
+    var cityHint = nearestCity ? ' ' + texts.nearestCity + ' ' + window.GeoFeelI18n.geoName(nearestCity.city.name) + '.' : '';
 
     if (location.source === 'ip') {
         setGeoStatus('warn', getApproximateLocationMessage(location, cityHint, userInitiated));
@@ -369,7 +369,7 @@ amap.on('click', async function(e) {
     setGeoStatus(
         'ok',
         texts.mapSelectionStatus
-        + (nearestCity ? ' ' + texts.cityAutoSet + ' ' + nearestCity.city.name + '.' : '')
+        + (nearestCity ? ' ' + texts.cityAutoSet + ' ' + window.GeoFeelI18n.geoName(nearestCity.city.name) + '.' : '')
     );
 });
 
@@ -391,7 +391,7 @@ fetch('/api/cities')
         cityCatalog.forEach(function(c) {
             var o = document.createElement('option');
             o.value = c.id;
-            o.textContent = c.name;
+            o.textContent = window.GeoFeelI18n.geoName(c.name);
             o.dataset.lat = c.center ? c.center.lat : '';
             o.dataset.lng = c.center ? c.center.lng : '';
             o.dataset.zoom = c.zoom || 13;

@@ -94,7 +94,7 @@ fetch('/api/cities')
         (cities || []).forEach(c => {
             const o = document.createElement('option');
             o.value = c.id;
-            o.textContent = c.name;
+            o.textContent = window.GeoFeelI18n.geoName(c.name);
             citySelect.appendChild(o);
         });
 
@@ -133,7 +133,7 @@ async function loadStats() {
         document.getElementById('statRequests').textContent = stats?.totalRequests ?? 0;
         document.getElementById('statPoints').textContent = stats?.totalPoints ?? 0;
         document.getElementById('statTopEmotion').textContent = toBgEmotion(stats?.topEmotions?.[0]?.key) ?? '—';
-        document.getElementById('statTopDistrict').textContent = districts?.[0]?.districtName ?? '—';
+        document.getElementById('statTopDistrict').textContent = window.GeoFeelI18n.geoName(districts?.[0]?.districtName ?? '—');
         document.getElementById('statScopeLabel').textContent = cityId ? texts.forSelectedCity : texts.forAllCities;
 
         renderTopEmotions(stats?.topEmotions ?? []);
@@ -185,7 +185,7 @@ function renderDistrictScores(items) {
     box.innerHTML = items.map(x => `
         <div class="drow">
             <div>
-                <strong>${x.districtName}</strong><br>
+                <strong>${window.GeoFeelI18n.geoName(x.districtName)}</strong><br>
                 <small class="text-muted">${texts.positive}: ${x.positiveScore} • ${texts.negative}: ${x.negativeScore}</small>
             </div>
             <span class="em-badge em-badge-super">${x.finalScore}</span>

@@ -1,7 +1,14 @@
+@using System.Text.Json
+@using Microsoft.AspNetCore.Html
 @model Emotional_Mapping.Web.Models.HomeIndexViewModel
 @using Emotional_Mapping.Domain.Enums
+
+@functions {
+IHtmlContent Js(object value) => Html.Raw(JsonSerializer.Serialize(value));
+}
 @{
     ViewData["Title"] = T["Nav.Home"];
+    var isPremium = User?.IsInRole("SuperUser") == true || User?.IsInRole("Admin") == true;
 }
 
 <section class="hero fade-up">
@@ -111,9 +118,18 @@
 
             @if (User.Identity?.IsAuthenticated == true)
             {
-                <button onclick="upgradeToPremium()" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
-                    @T["Plans.Upgrade"]
-                </button>
+                if (isPremium)
+                {
+                    <button id="upgradePremiumBtn" class="btn-em btn-em-primary" style="width:100%;justify-content:center;" disabled aria-disabled="true">
+                        @T["Plans.AlreadyPremium"]
+                    </button>
+                }
+                else
+                {
+                    <button id="upgradePremiumBtn" onclick="upgradeToPremium()" class="btn-em btn-em-primary" style="width:100%;justify-content:center;">
+                        @T["Plans.Upgrade"]
+                    </button>
+                }
             }
             else
             {
@@ -127,6 +143,8 @@
 
 @section Scripts {
 <script>
+const heroEmotionCacheKey = 'geofeel.heroTopEmotions';
+const initialHeroEmotionKeys = @Js(Model.HeroEmotionKeys);
 const heroBubbles = [
     { selector: '.e1', x: 34, y: -24, speed: 0.75, phase: 0.2, scale: 0.04, rotate: 6 },
     { selector: '.e2', x: -24, y: 28, speed: 0.92, phase: 1.1, scale: 0.03, rotate: -5 },
@@ -136,6 +154,82 @@ const heroBubbles = [
     { selector: '.e6', x: -18, y: 24, speed: 1.05, phase: 5.0, scale: 0.03, rotate: -6 },
     { selector: '.e7', x: 22, y: 26, speed: 0.8, phase: 2.7, scale: 0.04, rotate: 6 }
 ];
+const emotionCloud = document.getElementById('emotionCloud');
+
+function localizeHeroEmotion(emotionKey) {
+    if (!emotionKey) return '';
+
+    if (window.GeoFeelI18n && typeof window.GeoFeelI18n.emotion === 'function') {
+        return window.GeoFeelI18n.emotion(emotionKey);
+    }
+
+    return emotionKey;
+}
+
+function renderHeroBubbles(emotionKeys) {
+    if (!emotionCloud) return;
+
+    const validKeys = Array.isArray(emotionKeys)
+        ? emotionKeys.filter(Boolean).slice(0, 7)
+        : [];
+
+    emotionCloud.innerHTML = '';
+
+    validKeys.forEach((emotionKey, index) => {
+        const bubble = document.createElement('div');
+        bubble.className = `e e${index + 1}`;
+        bubble.textContent = localizeHeroEmotion(emotionKey);
+        emotionCloud.appendChild(bubble);
+    });
+}
+
+function persistHeroBubbles(emotionKeys) {
+    try {
+        if (Array.isArray(emotionKeys) && emotionKeys.length) {
+            localStorage.setItem(heroEmotionCacheKey, JSON.stringify(emotionKeys.slice(0, 7)));
+        }
+    } catch (_) { }
+}
+
+function loadCachedHeroBubbles() {
+    try {
+        const raw = localStorage.getItem(heroEmotionCacheKey);
+        if (!raw) return [];
+
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 7) : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+async function refreshHeroBubblesIfNeeded() {
+    if (!emotionCloud) return;
+    if (emotionCloud.children.length > 0) return;
+
+    const cachedKeys = loadCachedHeroBubbles();
+    if (cachedKeys.length) {
+        renderHeroBubbles(cachedKeys);
+    }
+
+    try {
+        const response = await fetch('/api/stats/dashboard');
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const topKeys = Array.isArray(data?.topEmotions)
+            ? data.topEmotions
+                .filter(x => x && x.emotion && Number(x.count) > 0)
+                .slice(0, 7)
+                .map(x => x.emotion)
+            : [];
+
+        if (topKeys.length) {
+            renderHeroBubbles(topKeys);
+            persistHeroBubbles(topKeys);
+        }
+    } catch (_) { }
+}
 
 function animateHeroBubbles(timeMs) {
     const t = timeMs / 1000;
@@ -155,9 +249,66 @@ function animateHeroBubbles(timeMs) {
     requestAnimationFrame(animateHeroBubbles);
 }
 
+if (initialHeroEmotionKeys.length) {
+    persistHeroBubbles(initialHeroEmotionKeys);
+}
+
+refreshHeroBubblesIfNeeded();
 requestAnimationFrame(animateHeroBubbles);
 
+const premiumTexts = {
+    alreadyPremium: @Js(T["Plans.AlreadyPremium"]),
+    checkoutFailed: @Js(T.Pick("Неуспешно стартиране на Stripe checkout.", "Failed to start Stripe checkout.")),
+    checkoutUrlMissing: @Js(T.Pick("Stripe не върна checkout URL.", "Stripe did not return a checkout URL.")),
+    networkError: @Js(T.Pick("Мрежова грешка при връзка със Stripe.", "Network error while contacting Stripe."))
+};
+
+function lockPremiumButton(message) {
+    const button = document.getElementById('upgradePremiumBtn');
+    if (!button) return;
+
+    if (window.GeoFeelUi && typeof window.GeoFeelUi.lockButton === 'function') {
+        window.GeoFeelUi.lockButton(button, premiumTexts.alreadyPremium);
+    } else {
+        button.disabled = true;
+        button.innerHTML = premiumTexts.alreadyPremium;
+    }
+
+    button.setAttribute('aria-disabled', 'true');
+
+    if (message) {
+        button.title = message;
+    }
+}
+
+async function syncPremiumButtonState() {
+    const button = document.getElementById('upgradePremiumBtn');
+    if (!button || button.disabled) return;
+
+    try {
+        const response = await fetch('/api/maps/quota');
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data?.isPremium) {
+            lockPremiumButton(premiumTexts.alreadyPremium);
+        }
+    } catch (_) { }
+}
+
+syncPremiumButtonState();
+
 function upgradeToPremium() {
+    const button = document.getElementById('upgradePremiumBtn');
+    const locked = !window.GeoFeelUi || window.GeoFeelUi.beginButtonAction(
+        button,
+        @Js(T.Pick("Пренасочване към плащане...", "Redirecting to payment..."))
+    );
+
+    if (!locked) {
+        return;
+    }
+
     fetch('/api/payments/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -166,17 +317,33 @@ function upgradeToPremium() {
         .then(async r => {
             const d = await r.json().catch(() => null);
             if (!r.ok) {
-                alert(d?.message || '@T.Pick("Неуспешно стартиране на Stripe checkout.", "Failed to start Stripe checkout.")');
+                if (d?.alreadyPremium) {
+                    lockPremiumButton(d?.message || premiumTexts.alreadyPremium);
+                    return;
+                }
+
+                alert(d?.message || premiumTexts.checkoutFailed);
+                if (window.GeoFeelUi) {
+                    window.GeoFeelUi.endButtonAction(button);
+                }
                 return;
             }
 
             if (d?.url) {
                 window.location.href = d.url;
             } else {
-                alert('@T.Pick("Stripe не върна checkout URL.", "Stripe did not return a checkout URL.")');
+                alert(premiumTexts.checkoutUrlMissing);
+                if (window.GeoFeelUi) {
+                    window.GeoFeelUi.endButtonAction(button);
+                }
             }
         })
-        .catch(() => alert('@T.Pick("Мрежова грешка при връзка със Stripe.", "Network error while contacting Stripe.")'));
+        .catch(() => {
+            alert(premiumTexts.networkError);
+            if (window.GeoFeelUi) {
+                window.GeoFeelUi.endButtonAction(button);
+            }
+        });
 }
 </script>
 }

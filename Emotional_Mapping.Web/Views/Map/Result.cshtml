@@ -93,16 +93,26 @@ const texts = {
     feedbackNetwork: @Js(T.Pick("Мрежова грешка при изпращане на обратната връзка.", "Network error while sending feedback.")),
     feedbackMatchComment: @Js(T.Pick("Пасва на настроението ми.", "It matches my mood.")),
     feedbackMismatchComment: @Js(T.Pick("Не пасва добре на настроението ми.", "It does not match my mood well.")),
+    makePublicBusy: @Js(T.Pick("Публикуване...", "Publishing...")),
+    publicReady: @Js(T.Pick("Публична", "Public")),
     makePublicFailed: @Js(T.Pick("Неуспешно публикуване.", "Failed to publish the map.")),
     publicNow: @Js(T.Pick("Картата вече е публична.", "The map is now public.")),
     publicLinkMissing: @Js(T.Pick("Още няма публичен линк. Направи картата публична първо.", "There is no public link yet. Make the map public first.")),
     linkCopied: @Js(T.Pick("Линкът е копиран.", "The link was copied.")),
+    publicViewReady: @Js(T.Pick("Публичен изглед", "Public view")),
     googleMapsMissing: @Js(T.Pick("Няма налична локация за Google Maps.", "There is no location available for Google Maps.")),
     googleMapsReady: @Js(T.Pick("Google Maps ще отвори: ", "Google Maps will open: ")),
     googleMapsFallback: @Js(T.Pick("избрана препоръка", "selected recommendation"))
 };
 const params = new URLSearchParams(window.location.search);
 const mapId = params.get('mapId');
+const publicSlugFromQuery = params.get('publicSlug') || params.get('slug');
+const publicSlugFromPath = (() => {
+    const match = window.location.pathname.match(/^\/Map\/Public\/([^/?#]+)/i);
+    return match ? decodeURIComponent(match[1]) : null;
+})();
+const publicSlug = publicSlugFromQuery || publicSlugFromPath;
+const isPublicView = Boolean(publicSlug);
 
 const resultMap = L.map('resultMap').setView([42.7339, 25.4858], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -111,6 +121,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(resultMap);
 
 let loadedMap = null;
+let loadedMapId = mapId;
 let loadedPublicLink = '';
 let currentGoogleMapsUrl = '';
 let feedbackSubmitting = false;
@@ -121,7 +132,11 @@ const voteButtons = [
 ];
 const googleMapsBtn = document.getElementById('googleMapsBtn');
 
-if (mapId) loadResult(mapId);
+if (isPublicView) {
+    loadPublicResult(publicSlug);
+} else if (mapId) {
+    loadResult(mapId);
+}
 
 async function loadResult(id) {
     const r = await fetch('/api/maps/' + id);
@@ -132,8 +147,29 @@ async function loadResult(id) {
 
     const d = await r.json();
     loadedMap = d;
+    loadedMapId = d.id || id;
 
-    document.getElementById('mapTitle').textContent = d.title ?? texts.mapFallback;
+    applyMapData(d);
+}
+
+async function loadPublicResult(slug) {
+    const r = await fetch('/api/maps/public/' + encodeURIComponent(slug));
+    if (!r.ok) {
+        showAlert('error', texts.mapNotFound);
+        return;
+    }
+
+    const d = await r.json();
+    loadedMap = d;
+    loadedMapId = d.id || null;
+
+    applyMapData(d);
+}
+
+function applyMapData(d) {
+    if (!d) return;
+
+    document.getElementById('mapTitle').textContent = window.GeoFeelI18n.mapTitle(d.title ?? texts.mapFallback);
     document.getElementById('mapEmotion').textContent = toBgEmotion(d.dominantEmotion) ?? '—';
     document.getElementById('mapSummary').textContent = d.summary ?? texts.noDescription;
     document.getElementById('mapConfidence').textContent = Math.round((d.confidence ?? 0) * 100) + '%';
@@ -172,9 +208,36 @@ async function loadResult(id) {
     }
 
     if (d.publicSlug) {
-        loadedPublicLink = window.location.origin + '/api/maps/public/' + d.publicSlug;
+        loadedPublicLink = resolvePublicViewUrl(d);
         document.getElementById('publicLinkBox').textContent = loadedPublicLink;
+
+        const publicBtn = document.getElementById('publicBtn');
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.lockButton(publicBtn, texts.publicViewReady);
+        } else if (publicBtn) {
+            publicBtn.disabled = true;
+            publicBtn.textContent = texts.publicViewReady;
+        }
     }
+
+    if (isPublicView) {
+        const publicBtn = document.getElementById('publicBtn');
+        if (publicBtn) {
+            publicBtn.style.display = 'none';
+        }
+    }
+}
+
+function buildPublicViewUrl(slug) {
+    return window.location.origin + '/Map/Public/' + encodeURIComponent(slug);
+}
+
+function resolvePublicViewUrl(data) {
+    if (data?.publicUrl) {
+        return new URL(data.publicUrl, window.location.origin).toString();
+    }
+
+    return buildPublicViewUrl(data?.publicSlug);
 }
 
 function focusRec(index) {
@@ -240,7 +303,7 @@ function showActionStatus(type, message) {
 async function vote(isAccurate) {
     if (feedbackSubmitting) return;
 
-    if (!mapId) {
+    if (!loadedMapId) {
         showFeedbackStatus('warn', texts.feedbackMissingMap);
         return;
     }
@@ -254,7 +317,7 @@ async function vote(isAccurate) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                generatedMapId: mapId,
+                generatedMapId: loadedMapId,
                 rating: isAccurate ? 5 : 2,
                 reaction: isAccurate ? 1 : 2,
                 comment: isAccurate ? texts.feedbackMatchComment : texts.feedbackMismatchComment
@@ -280,16 +343,27 @@ async function vote(isAccurate) {
 document.getElementById('publicBtn').addEventListener('click', async () => {
     if (!mapId) return;
 
+    const publicBtn = document.getElementById('publicBtn');
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(publicBtn, texts.makePublicBusy)) {
+        return;
+    }
+
     const r = await fetch('/api/maps/' + mapId + '/make-public', { method: 'POST' });
     if (!r.ok) {
         showActionStatus('error', texts.makePublicFailed);
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(publicBtn);
+        }
         return;
     }
 
     const d = await r.json();
-    loadedPublicLink = window.location.origin + '/api/maps/public/' + d.publicSlug;
+    loadedPublicLink = resolvePublicViewUrl(d);
     document.getElementById('publicLinkBox').textContent = loadedPublicLink;
     showActionStatus('ok', texts.publicNow);
+    if (window.GeoFeelUi) {
+        window.GeoFeelUi.lockButton(publicBtn, texts.publicViewReady);
+    }
 });
 
 document.getElementById('copyBtn').addEventListener('click', async () => {

@@ -238,7 +238,7 @@
 
                             <form method="post" action="/Account/Logout" class="em-account__form">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="em-account__logout">@T["Account.Logout"]</button>
+                                <button type="submit" class="em-account__logout" data-busy-text="@T.Pick("Излизане...", "Signing out...")">@T["Account.Logout"]</button>
                             </form>
                         </div>
                     </details>

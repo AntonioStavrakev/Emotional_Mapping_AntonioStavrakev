@@ -2,6 +2,7 @@ using Emotional_Mapping.Application.DTOs;
 using Emotional_Mapping.Application.Interfaces;
 using Emotional_Mapping.Application.Interfaces.Repositories;
 using Emotional_Mapping.Application.Services;
+using Emotional_Mapping.Domain.Entities;
 using Emotional_Mapping.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,15 +16,18 @@ public class MapsController : ControllerBase
     private readonly MapGenerationService _service;
     private readonly IMapRepository _maps;
     private readonly ICurrentUser _currentUser;
+    private readonly IAiEmotionService _aiEmotionService;
 
     public MapsController(
         MapGenerationService service,
         IMapRepository maps,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IAiEmotionService aiEmotionService)
     {
         _service = service;
         _maps = maps;
         _currentUser = currentUser;
+        _aiEmotionService = aiEmotionService;
     }
 
     // Guest
@@ -69,33 +73,7 @@ public class MapsController : ControllerBase
         var map = await _maps.GetGeneratedMapAsync(id, ct);
         if (map == null) return NotFound();
 
-        return Ok(new
-        {
-            id = map.Id,
-            title = map.Title,
-            dominantEmotion = map.DominantEmotion.ToString(),
-            confidence = map.Confidence,
-            summary = map.Summary,
-            publicSlug = map.PublicSlug,
-            visibility = map.Visibility.ToString(),
-            generatedAtUtc = map.GeneratedAtUtc,
-            recommendations = map.Recommendations.Select(r => new
-            {
-                id = r.Id,
-                emotion = r.Emotion.ToString(),
-                score = r.Score,
-                reason = r.Reason,
-                place = r.Place != null ? new
-                {
-                    id = r.Place.Id,
-                    name = r.Place.Name,
-                    lat = r.Place.Location.Lat,
-                    lng = r.Place.Location.Lng,
-                    description = r.Place.Description,
-                    type = r.Place.Type.ToString()
-                } : null
-            })
-        });
+        return Ok(await BuildMapResponseAsync(map, ct));
     }
 
     // User's own maps
@@ -107,16 +85,19 @@ public class MapsController : ControllerBase
         if (string.IsNullOrEmpty(userId)) return Unauthorized();
 
         var maps = await _maps.GetUserMapsAsync(userId, ct);
+        var targetLanguage = ResolveRequestLanguage();
 
-        return Ok(maps.Select(m => new
+        var result = await Task.WhenAll(maps.Select(async m => new
         {
             id = m.Id,
             title = m.Title,
             dominantEmotion = m.DominantEmotion.ToString(),
             confidence = m.Confidence,
-            summary = m.Summary,
+            summary = await LocalizeSummaryAsync(m.Summary, m.MapRequest?.Language, targetLanguage, ct),
             generatedAtUtc = m.GeneratedAtUtc
         }));
+
+        return Ok(result);
     }
 
     // Guest/User
@@ -155,7 +136,11 @@ public class MapsController : ControllerBase
             await _maps.SaveChangesAsync(ct);
         }
 
-        return Ok(new { publicSlug = slug });
+        return Ok(new
+        {
+            publicSlug = slug,
+            publicUrl = $"/Map/Public/{slug}"
+        });
     }
 
     // Publish share link
@@ -176,7 +161,7 @@ public class MapsController : ControllerBase
         return Ok(new
         {
             slug,
-            publicUrl = $"/api/maps/public/{slug}"
+            publicUrl = $"/Map/Public/{slug}"
         });
     }
 
@@ -188,6 +173,78 @@ public class MapsController : ControllerBase
         if (map == null) return NotFound();
         if (map.Visibility != MapVisibility.Public) return NotFound();
 
-        return Ok(map);
+        return Ok(await BuildMapResponseAsync(map, ct));
+    }
+
+    private string ResolveRequestLanguage()
+    {
+        var acceptLanguage = Request.Headers.AcceptLanguage.ToString();
+        return acceptLanguage.Contains("en", StringComparison.OrdinalIgnoreCase) ? "en" : "bg";
+    }
+
+    private async Task<string?> LocalizeSummaryAsync(
+        string? summary,
+        string? sourceLanguage,
+        string targetLanguage,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(summary))
+            return summary;
+
+        var normalizedSourceLanguage = string.Equals(sourceLanguage, "en", StringComparison.OrdinalIgnoreCase)
+            ? "en"
+            : "bg";
+
+        if (normalizedSourceLanguage == targetLanguage)
+            return summary;
+
+        if (targetLanguage == "en" && !ContainsCyrillic(summary))
+            return summary;
+
+        return await _aiEmotionService.TranslateTextAsync(summary, targetLanguage, ct);
+    }
+
+    private static bool ContainsCyrillic(string text)
+    {
+        foreach (var ch in text)
+        {
+            if ((ch >= 'А' && ch <= 'я') || ch == 'Ѝ' || ch == 'ѝ')
+                return true;
+        }
+
+        return false;
+    }
+
+    private async Task<object> BuildMapResponseAsync(GeneratedMap map, CancellationToken ct)
+    {
+        var targetLanguage = ResolveRequestLanguage();
+
+        return new
+        {
+            id = map.Id,
+            title = map.Title,
+            dominantEmotion = map.DominantEmotion.ToString(),
+            confidence = map.Confidence,
+            summary = await LocalizeSummaryAsync(map.Summary, map.MapRequest?.Language, targetLanguage, ct),
+            publicSlug = map.PublicSlug,
+            visibility = map.Visibility.ToString(),
+            generatedAtUtc = map.GeneratedAtUtc,
+            recommendations = map.Recommendations.Select(r => new
+            {
+                id = r.Id,
+                emotion = r.Emotion.ToString(),
+                score = r.Score,
+                reason = r.Reason,
+                place = r.Place != null ? new
+                {
+                    id = r.Place.Id,
+                    name = r.Place.Name,
+                    lat = r.Place.Location.Lat,
+                    lng = r.Place.Location.Lng,
+                    description = r.Place.Description,
+                    type = r.Place.Type.ToString()
+                } : null
+            })
+        };
     }
 }

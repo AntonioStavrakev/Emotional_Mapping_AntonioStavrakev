@@ -320,13 +320,14 @@ async function requestDeviceLocation(userInitiated) {
         location.lng,
         Number.isFinite(location.accuracyMeters) ? location.accuracyMeters : usableAccuracyMeters,
         {
+            force: location.source === 'gps',
             skipCenter: true,
             skipStatus: true,
             maxDistanceKm: location.source === 'ip' ? 90 : undefined
         }
     );
 
-    const cityHint = nearestCity ? ` ${texts.cityRecognized} ${nearestCity.city.name}.` : '';
+    const cityHint = nearestCity ? ` ${texts.cityRecognized} ${window.GeoFeelI18n.geoName(nearestCity.city.name)}.` : '';
 
     if (location.source === 'ip') {
         setGeoStatus('warn', getApproximateLocationMessage(location, cityHint, userInitiated));
@@ -349,7 +350,7 @@ fetch('/api/cities')
         cityCatalog.forEach(c => {
             const o = document.createElement('option');
             o.value = c.id;
-            o.textContent = c.name;
+            o.textContent = window.GeoFeelI18n.geoName(c.name);
             o.dataset.lat = c.center?.lat ?? '';
             o.dataset.lng = c.center?.lng ?? '';
             o.dataset.zoom = c.zoom ?? 12;
@@ -395,7 +396,7 @@ citySelect.addEventListener('change', async function () {
         (districts || []).forEach(d => {
             const districtOption = document.createElement('option');
             districtOption.value = d.id;
-            districtOption.textContent = d.name;
+            districtOption.textContent = window.GeoFeelI18n.geoName(d.name);
             districtSelect.appendChild(districtOption);
         });
     } catch {}

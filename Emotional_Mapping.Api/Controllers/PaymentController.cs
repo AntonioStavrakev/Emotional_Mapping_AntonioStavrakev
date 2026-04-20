@@ -48,6 +48,22 @@ public class PaymentController : ControllerBase
             return Unauthorized(new { message = "Не е разпознат текущият потребител." });
 
         var productType = NormalizeProductType(request?.ProductType);
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return Unauthorized(new { message = Pick("Текущият потребител не е намерен.", "The current user could not be found.") });
+
+        if (productType == "premium" &&
+            (await _userManager.IsInRoleAsync(user, "SuperUser") || await _userManager.IsInRoleAsync(user, "Admin")))
+        {
+            return Conflict(new
+            {
+                message = Pick("Вече сте Premium.", "You are already Premium."),
+                productType,
+                alreadyPremium = true,
+                isSuperUser = true
+            });
+        }
+
         var lineItem = BuildLineItem(productType);
 
         var options = new SessionCreateOptions
@@ -175,6 +191,14 @@ public class PaymentController : ControllerBase
         return string.Equals(productType, "bundle10", StringComparison.OrdinalIgnoreCase)
             ? "bundle10"
             : "premium";
+    }
+
+    private string Pick(string bg, string en) => IsEnglishRequest() ? en : bg;
+
+    private bool IsEnglishRequest()
+    {
+        var acceptLanguage = Request.Headers.AcceptLanguage.ToString();
+        return acceptLanguage.Contains("en", StringComparison.OrdinalIgnoreCase);
     }
 
     private SessionLineItemOptions BuildLineItem(string productType)

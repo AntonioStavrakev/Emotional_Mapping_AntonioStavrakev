@@ -328,7 +328,7 @@ img {
 .em-nav-ico:focus-visible .em-nav-ico__label,
 .em-nav-ico.is-active .em-nav-ico__label {
   opacity: 1;
-  max-width: 140px;
+  max-width: 190px;
   margin-left: 2px;
   transform: translateX(0);
 }
@@ -1063,6 +1063,86 @@ img {
   font-size: 1.05rem;
   max-width: 600px;
   line-height: 1.6;
+}
+
+.privacy-wrap {
+  display: grid;
+  grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.privacy-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.privacy-sidebar__card {
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(137,217,87,.18);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,252,236,.88)),
+    radial-gradient(circle at top right, rgba(201,226,101,.14), transparent 52%);
+  box-shadow: 0 20px 42px rgba(111, 149, 57, .10);
+}
+
+.privacy-sidebar__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  margin-bottom: 14px;
+  background: rgba(137,217,87,.14);
+  color: #4a8c1c;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.privacy-sidebar__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.privacy-sidebar__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.privacy-content {
+  display: grid;
+  gap: 18px;
+}
+
+.privacy-section {
+  padding: 24px 26px;
+}
+
+.privacy-section__title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+
+.privacy-section__text {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.privacy-section__text + .privacy-section__text {
+  margin-top: 12px;
 }
 
 /* RANGE */
@@ -2894,6 +2974,15 @@ input[type=range] {
 
   .contact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .privacy-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-section,
+  .privacy-sidebar__card {
+    padding: 20px;
   }
 
   .emotion-cloud {

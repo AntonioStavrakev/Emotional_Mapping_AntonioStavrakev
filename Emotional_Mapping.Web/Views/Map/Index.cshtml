@@ -111,7 +111,7 @@ fetch('/api/cities')
         cityCatalog.forEach(c => {
             const o = document.createElement('option');
             o.value = c.id;
-            o.textContent = c.name;
+            o.textContent = window.GeoFeelI18n.geoName(c.name);
 
             o.dataset.lat = c.center?.lat ?? '';
             o.dataset.lng = c.center?.lng ?? '';
@@ -167,7 +167,7 @@ citySelect.addEventListener('change', async function () {
             const el = document.createElement('a');
             el.className = 'fi';
             el.href = '/Map/Result?mapId=' + m.id;
-            el.innerHTML = `<span class="cdot" style="background:#89d957"></span> ${m.title ?? texts.mapTitleFallback}`;
+            el.innerHTML = `<span class="cdot" style="background:#89d957"></span> ${window.GeoFeelI18n.mapTitle(m.title ?? texts.mapTitleFallback)}`;
             publicMapsList.appendChild(el);
 
             if (m.recommendations) {

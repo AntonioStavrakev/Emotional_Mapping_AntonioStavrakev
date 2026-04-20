@@ -33,7 +33,8 @@ public class HomeController : Controller
         });
     }
 
-    // GET /Home/Privacy
+    // GET /Privacy
+    [HttpGet("/Privacy")]
     public IActionResult Privacy()
     {
         return View();

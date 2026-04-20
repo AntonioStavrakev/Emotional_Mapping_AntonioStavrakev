@@ -229,9 +229,9 @@ function renderU(us) {
                     : '<span class="em-badge em-badge-calm">' + texts.standardUser + '</span>') + '</td>'
                 + '<td><div style="display:flex;gap:.5rem;">'
                 + (!u.isSuperUser
-                    ? '<button class="btn-em btn-em-primary btn-em-sm" onclick="grantSU(\''
+                    ? '<button class="btn-em btn-em-primary btn-em-sm" onclick="grantSU(this, \''
                       + u.id + '\')">Premium</button>'
-                    : '<button class="btn-em btn-em-ghost btn-em-sm" onclick="revokeSU(\''
+                    : '<button class="btn-em btn-em-ghost btn-em-sm" onclick="revokeSU(this, \''
                       + u.id + '\')">' + texts.revoke + '</button>')
                 + '</div></td></tr>';
           }).join('')
@@ -246,8 +246,9 @@ document.getElementById('uSearch').addEventListener('input', function() {
     }));
 });
 
-function grantSU(id) {
+function grantSU(button, id) {
     if (!confirm(texts.grantPremiumConfirm)) return;
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, texts.approve)) return;
     fetch('/api/admin/grant-superuser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,12 +257,16 @@ function grantSU(id) {
         if (!r.ok) throw new Error('grant failed');
         return loadUsers();
     }).then(loadOverview).catch(function() {
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(button);
+        }
         alert(texts.grantPremiumFailed);
     });
 }
 
-function revokeSU(id) {
+function revokeSU(button, id) {
     if (!confirm(texts.revokePremiumConfirm)) return;
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, texts.revoke)) return;
     fetch('/api/admin/revoke-superuser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -270,6 +275,9 @@ function revokeSU(id) {
         if (!r.ok) throw new Error('revoke failed');
         return loadUsers();
     }).then(loadOverview).catch(function() {
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(button);
+        }
         alert(texts.revokePremiumFailed);
     });
 }
@@ -298,6 +306,11 @@ function loadEmotions() {
 
 document.getElementById('addEmForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    var submitButton = this.querySelector('button[type="submit"]');
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(submitButton, texts.approve)) {
+        return;
+    }
+
     fetch('/api/admin/emotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -310,12 +323,21 @@ document.getElementById('addEmForm').addEventListener('submit', function(e) {
         if (r.ok) {
             document.getElementById('addEmForm').reset();
             loadEmotions();
+            if (window.GeoFeelUi) {
+                window.GeoFeelUi.endButtonAction(submitButton);
+            }
             return;
         }
 
         const err = await r.json().catch(function() { return null; });
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(submitButton);
+        }
         alert(err?.message || texts.addEmotionFailed);
     }).catch(function() {
+        if (window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(submitButton);
+        }
         alert(texts.addEmotionNetwork);
     });
 });
@@ -332,7 +354,7 @@ function loadPoints() {
                     + '<td><span class="em-badge em-badge-joy">' + esc(toBgEmotion(p.emotion || '')) + '</span></td>'
                     + '<td style="text-align:center">' + (p.intensity || '—') + '</td>'
                     + '<td>' + (p.isApproved ? '&#10003;' : '&#10007;') + '</td>'
-                    + '<td><button class="btn-em btn-em-danger btn-em-sm" onclick="delPt(\''
+                    + '<td><button class="btn-em btn-em-danger btn-em-sm" onclick="delPt(this, \''
                     + p.id + '\')">' + texts.delete + '</button></td></tr>';
             }).join('')
             || '<tr><td colspan="6" style="text-align:center;color:#6b7080;padding:2rem">' + texts.none + '</td></tr>';
@@ -359,9 +381,9 @@ function loadSuggestedPlaces() {
                     + '<td><span class="em-badge em-badge-calm">' + esc(p.type || texts.placeTypeFallback) + '</span></td>'
                     + '<td style="font-size:.8rem;color:#6b7080">' + esc(p.address || '—') + '</td>'
                     + '<td><div style="display:flex;gap:.5rem;flex-wrap:wrap;">'
-                    + '<button class="btn-em btn-em-primary btn-em-sm" onclick="approvePlace(\''
+                    + '<button class="btn-em btn-em-primary btn-em-sm" onclick="approvePlace(this, \''
                     + p.id + '\')">' + texts.approve + '</button>'
-                    + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deletePlace(\''
+                    + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deletePlace(this, \''
                     + p.id + '\')">' + texts.delete + '</button>'
                     + '</div></td>'
                     + '</tr>';
@@ -373,37 +395,49 @@ function loadSuggestedPlaces() {
         });
 }
 
-function approvePlace(id) {
+function approvePlace(button, id) {
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, texts.approve)) return;
     fetch('/api/admin/places/' + id + '/approve', { method: 'POST' })
         .then(function(r) {
             if (!r.ok) throw new Error('approve failed');
             loadSuggestedPlaces();
         })
         .catch(function() {
+            if (window.GeoFeelUi) {
+                window.GeoFeelUi.endButtonAction(button);
+            }
             alert(texts.approvePlaceFailed);
         });
 }
 
-function deletePlace(id) {
+function deletePlace(button, id) {
     if (!confirm(texts.deletePlaceConfirm)) return;
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, texts.delete)) return;
     fetch('/api/admin/places/' + id, { method: 'DELETE' })
         .then(function(r) {
             if (!r.ok) throw new Error('delete failed');
             loadSuggestedPlaces();
         })
         .catch(function() {
+            if (window.GeoFeelUi) {
+                window.GeoFeelUi.endButtonAction(button);
+            }
             alert(texts.deletePlaceFailed);
         });
 }
 
-function delPt(id) {
+function delPt(button, id) {
     if (!confirm(texts.deletePointConfirm)) return;
+    if (window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, texts.delete)) return;
     fetch('/api/admin/points/' + id, { method: 'DELETE' })
         .then(function(r) {
             if (!r.ok) throw new Error('delete failed');
             loadPoints();
             loadOverview();
         }).catch(function() {
+            if (window.GeoFeelUi) {
+                window.GeoFeelUi.endButtonAction(button);
+            }
             alert(texts.deletePointFailed);
         });
 }

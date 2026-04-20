@@ -79,6 +79,112 @@ function decodeHtmlEntities(value) {
     return textarea.value;
 }
 
+var geoFeelKnownGeoNames = {
+    'София': 'Sofia',
+    'Пловдив': 'Plovdiv',
+    'Варна': 'Varna',
+    'Бургас': 'Burgas',
+    'Смолян': 'Smolyan',
+    'Несебър': 'Nessebar',
+    'Велико Търново': 'Veliko Tarnovo',
+    'Централен': 'Tsentralen',
+    'Мараша': 'Marasha'
+};
+
+var geoFeelKnownGeoNamesBg = Object.keys(geoFeelKnownGeoNames).reduce(function (acc, key) {
+    acc[geoFeelKnownGeoNames[key]] = key;
+    return acc;
+}, {});
+
+var geoFeelBulgarianTransliterationMap = {
+    'А': 'A', 'а': 'a',
+    'Б': 'B', 'б': 'b',
+    'В': 'V', 'в': 'v',
+    'Г': 'G', 'г': 'g',
+    'Д': 'D', 'д': 'd',
+    'Е': 'E', 'е': 'e',
+    'Ж': 'Zh', 'ж': 'zh',
+    'З': 'Z', 'з': 'z',
+    'И': 'I', 'и': 'i',
+    'Й': 'Y', 'й': 'y',
+    'К': 'K', 'к': 'k',
+    'Л': 'L', 'л': 'l',
+    'М': 'M', 'м': 'm',
+    'Н': 'N', 'н': 'n',
+    'О': 'O', 'о': 'o',
+    'П': 'P', 'п': 'p',
+    'Р': 'R', 'р': 'r',
+    'С': 'S', 'с': 's',
+    'Т': 'T', 'т': 't',
+    'У': 'U', 'у': 'u',
+    'Ф': 'F', 'ф': 'f',
+    'Х': 'H', 'х': 'h',
+    'Ц': 'Ts', 'ц': 'ts',
+    'Ч': 'Ch', 'ч': 'ch',
+    'Ш': 'Sh', 'ш': 'sh',
+    'Щ': 'Sht', 'щ': 'sht',
+    'Ъ': 'A', 'ъ': 'a',
+    'Ь': '', 'ь': '',
+    'Ю': 'Yu', 'ю': 'yu',
+    'Я': 'Ya', 'я': 'ya',
+    'Ѝ': 'I', 'ѝ': 'i'
+};
+
+function geoFeelContainsCyrillic(value) {
+    return /[А-Яа-яЍѝ]/.test(String(value || ''));
+}
+
+function transliterateBulgarianText(value) {
+    return Array.from(String(value || '')).map(function (char) {
+        return Object.prototype.hasOwnProperty.call(geoFeelBulgarianTransliterationMap, char)
+            ? geoFeelBulgarianTransliterationMap[char]
+            : char;
+    }).join('');
+}
+
+function toLocalizedGeoName(value) {
+    if (value === null || value === undefined) return '';
+
+    var text = String(decodeHtmlEntities(value)).trim();
+    if (!text) return '';
+
+    if (geoFeelCurrentLanguage() !== 'en') {
+        return geoFeelKnownGeoNamesBg[text] || text;
+    }
+
+    if (geoFeelKnownGeoNames[text]) {
+        return geoFeelKnownGeoNames[text];
+    }
+
+    if (!geoFeelContainsCyrillic(text)) {
+        return text;
+    }
+
+    return transliterateBulgarianText(text);
+}
+
+function toLocalizedMapTitle(value) {
+    if (value === null || value === undefined) return '';
+
+    var text = String(decodeHtmlEntities(value)).trim();
+    if (!text) return '';
+
+    var bgMatch = /^Емоционална карта\s*:\s*(.+)$/i.exec(text);
+    var enMatch = /^Emotional map\s*:\s*(.+)$/i.exec(text);
+    var matchedLocation = bgMatch ? bgMatch[1] : (enMatch ? enMatch[1] : null);
+
+    if (matchedLocation) {
+        var location = matchedLocation.trim();
+        return geoFeelCurrentLanguage() === 'en'
+            ? 'Emotional map: ' + toLocalizedGeoName(location)
+            : 'Емоционална карта: ' + (geoFeelKnownGeoNamesBg[location] || location);
+    }
+
+    return geoFeelCurrentLanguage() === 'en'
+        ? toLocalizedGeoName(text)
+        : text;
+}
+
 function normalizeEmotionKey(value) {
     if (value === null || value === undefined) return null;
 
@@ -121,6 +227,99 @@ function toLocalizedTimeLabel(label) {
     return label;
 }
 
+function geoFeelBeginButtonAction(button, busyText) {
+    if (!button) return false;
+    if (button.dataset.geoFeelBusy === 'true') return false;
+
+    button.dataset.geoFeelBusy = 'true';
+    if (!button.dataset.geoFeelOriginalHtml) {
+        button.dataset.geoFeelOriginalHtml = button.innerHTML;
+    }
+
+    button.disabled = true;
+    if (busyText) {
+        button.innerHTML = busyText;
+    }
+
+    return true;
+}
+
+function geoFeelEndButtonAction(button) {
+    if (!button) return;
+
+    button.disabled = false;
+    if (button.dataset.geoFeelOriginalHtml) {
+        button.innerHTML = button.dataset.geoFeelOriginalHtml;
+    }
+
+    delete button.dataset.geoFeelBusy;
+}
+
+function geoFeelLockButton(button, lockedText) {
+    if (!button) return;
+
+    if (!button.dataset.geoFeelOriginalHtml) {
+        button.dataset.geoFeelOriginalHtml = button.innerHTML;
+    }
+
+    button.disabled = true;
+    button.dataset.geoFeelBusy = 'true';
+
+    if (lockedText) {
+        button.innerHTML = lockedText;
+    }
+}
+
+function geoFeelEnhanceSubmitOnceForms() {
+    document.querySelectorAll('form').forEach(function (form) {
+        var method = (form.getAttribute('method') || 'get').toLowerCase();
+        if (method !== 'post') return;
+        if (form.dataset.submitOnce === 'off') return;
+        if (form.dataset.submitOnceBound === 'true') return;
+
+        form.dataset.submitOnceBound = 'true';
+
+        form.addEventListener('submit', function (event) {
+            if (form.dataset.submitting === 'true') {
+                event.preventDefault();
+                return;
+            }
+
+            if (window.jQuery && window.jQuery.validator && typeof window.jQuery(form).valid === 'function' && !window.jQuery(form).valid()) {
+                return;
+            }
+
+            if (typeof form.checkValidity === 'function' && !form.checkValidity()) {
+                return;
+            }
+
+            var submitter = event.submitter;
+            if (!submitter) {
+                submitter = form.querySelector('button[type="submit"], input[type="submit"]');
+            }
+
+            if (!submitter) return;
+
+            form.dataset.submitting = 'true';
+
+            var busyText = submitter.dataset.busyText || form.dataset.busyText || '';
+            geoFeelBeginButtonAction(submitter, busyText);
+
+            form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(function (button) {
+                if (button !== submitter) {
+                    button.disabled = true;
+                }
+            });
+        });
+    });
+}
+
+window.GeoFeelUi = {
+    beginButtonAction: geoFeelBeginButtonAction,
+    endButtonAction: geoFeelEndButtonAction,
+    lockButton: geoFeelLockButton
+};
+
 // Keep navigation labels in a custom hover pill instead of the native title tooltip
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.em-nav-ico').forEach(function (el) {
@@ -133,6 +332,8 @@ document.addEventListener('DOMContentLoaded', function () {
             el.removeAttribute('title');
         }
     });
+
+    geoFeelEnhanceSubmitOnceForms();
 });
 
 window.GeoFeelLocation = (function () {
@@ -462,5 +663,7 @@ window.GeoFeelI18n = {
     currentLanguage: geoFeelCurrentLanguage,
     emotionKey: normalizeEmotionKey,
     emotion: toLocalizedEmotion,
-    timeLabel: toLocalizedTimeLabel
+    timeLabel: toLocalizedTimeLabel,
+    geoName: toLocalizedGeoName,
+    mapTitle: toLocalizedMapTitle
 };

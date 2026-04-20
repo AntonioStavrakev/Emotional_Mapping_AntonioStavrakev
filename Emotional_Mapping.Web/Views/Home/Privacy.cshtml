@@ -2,43 +2,110 @@
     ViewData["Title"] = T["Footer.Privacy"];
 }
 
-<div style="max-width:720px;margin:0 auto;" class="fade-up">
-    <div class="em-page-header">
-        <h1 class="em-page-title">@T.Pick("Политика за поверителност", "Privacy Policy")</h1>
-        <p class="em-page-sub">@T.Pick("Последна актуализация: 2026", "Last updated: 2026")</p>
-    </div>
-    <div class="em-card" style="display:flex;flex-direction:column;gap:1.75rem;line-height:1.85;">
-        <div>
-            <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                @T.Pick("Какви данни събираме", "What data we collect")
-            </h2>
-            <p style="color:#6b7080;font-size:.9rem;">
-                @T.Pick("Събираме само имейл адрес, показвано име и доброволно добавените емоционални точки. Анонимните точки не са свързани с идентифициращи данни.", "We only collect the email address, display name, and voluntarily added emotional points. Anonymous points are not linked to identifying data.")
-            </p>
-        </div>
-        <div>
-            <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                @T.Pick("AI обработка", "AI processing")
-            </h2>
-            <p style="color:#6b7080;font-size:.9rem;">
-                @T.Pick("Описанията може да се изпращат към OpenAI API. Не изпращаме лични идентификатори към трети страни.", "Descriptions may be sent to the OpenAI API. We do not send personal identifiers to third parties.")
-            </p>
-        </div>
-        <div>
-            <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                @T.Pick("Плащания", "Payments")
-            </h2>
-            <p style="color:#6b7080;font-size:.9rem;">
-                @T.Pick("Плащанията се обработват от Stripe. Не съхраняваме данни за кредитни карти.", "Payments are processed by Stripe. We do not store credit card data.")
-            </p>
-        </div>
-        <div>
-            <h2 style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;margin-bottom:.65rem;">
-                @T.Pick("Твоите права", "Your rights")
-            </h2>
-            <p style="color:#6b7080;font-size:.9rem;">
-                @T.Pick("Имаш право да поискаш изтриване или експорт на данните си по всяко време.", "You have the right to request deletion or export of your data at any time.")
-            </p>
-        </div>
-    </div>
+<div class="em-page-header fade-up">
+    <span class="em-page-header__icon">🔒</span>
+    <div class="em-page-header__badge">🛡️ GEOFEEL</div>
+    <h1 class="em-page-title">@T.Pick("Политика за поверителност", "Privacy Policy")</h1>
+    <p class="em-page-sub">
+        @T.Pick(
+            "Как обработваме лични данни, плащания, AI заявки и съдържанието, което добавяш в GEOFEEL. Последна актуализация: 20 април 2026 г.",
+            "How we handle personal data, payments, AI requests, and the content you add to GEOFEEL. Last updated: April 20, 2026.")
+    </p>
 </div>
+
+<section class="privacy-wrap fade-up fade-up-1">
+    <aside class="privacy-sidebar">
+        <div class="privacy-sidebar__card">
+            <div class="privacy-sidebar__eyebrow">@T.Pick("Накратко", "At a glance")</div>
+            <ul class="privacy-sidebar__list">
+                <li>@T.Pick("Събираме само данни, нужни за профила, картите и сигурността.", "We collect only the data needed for your account, maps, and security.")</li>
+                <li>@T.Pick("Плащанията се обработват от Stripe, не пазим картови данни.", "Payments are processed by Stripe, and we do not store card details.")</li>
+                <li>@T.Pick("AI текстовете може да се обработват от OpenAI за генериране на резултати.", "AI text inputs may be processed by OpenAI to generate results.")</li>
+                <li>@T.Pick("Можеш да се свържеш с нас за корекция, експорт или изтриване на данни.", "You can contact us for data correction, export, or deletion.")</li>
+            </ul>
+        </div>
+
+        <div class="privacy-sidebar__card">
+            <div class="privacy-sidebar__eyebrow">@T.Pick("Бързи действия", "Quick actions")</div>
+            <div class="privacy-sidebar__actions">
+                <a href="/Contact" class="btn-em btn-em-primary">@T.Pick("Свържи се с нас", "Contact us")</a>
+                <a href="/Map/Generate" class="btn-em btn-em-ghost">@T.Pick("Генерирай карта", "Generate a map")</a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="privacy-content">
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("1. Какви данни събираме", "1. What data we collect")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Когато използваш GEOFEEL, може да съхраняваме имейл адрес, показвано име, роля на акаунта, история на генерирани карти, доброволно добавени емоционални точки, предложения за места, обратна връзка и технически данни, свързани със сигурността и използването на услугата.",
+                    "When you use GEOFEEL, we may store your email address, display name, account role, generated map history, voluntarily added emotional points, place suggestions, feedback, and technical data related to security and service usage.")
+            </p>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Ако добавиш анонимна точка, тя не се визуализира като персонален публичен профил, но съдържанието й пак може да бъде използвано за обобщени статистики и AI анализ в рамките на платформата.",
+                    "If you add an anonymous point, it is not displayed as part of a personal public profile, but its content may still be used for aggregated statistics and AI analysis within the platform.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("2. Защо използваме тези данни", "2. Why we use this data")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Използваме данните, за да създаваме и пазим твоите карти, да показваме статистики, да обработваме предложения и обратна връзка, да управляваме premium достъп и да защитаваме платформата от злоупотреби.",
+                    "We use the data to create and store your maps, display statistics, process suggestions and feedback, manage premium access, and protect the platform from abuse.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("3. AI обработка и външни услуги", "3. AI processing and external services")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Когато изпращаш текст за AI генерация, част от съдържанието може да бъде изпратено към OpenAI, за да се определи емоция, кратко summary и подходящи препоръки. Стремим се да не изпращаме ненужни лични идентификатори в такива заявки.",
+                    "When you submit text for AI generation, part of that content may be sent to OpenAI to determine the emotion, a short summary, and relevant recommendations. We aim not to send unnecessary personal identifiers in those requests.")
+            </p>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "За географски данни и карти платформата може да използва външни картографски и геолокационни услуги. Тези интеграции се използват само за работата на основните функции.",
+                    "For geographic data and maps, the platform may use external mapping and geolocation services. These integrations are used only to power the core features.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("4. Плащания и premium функции", "4. Payments and premium features")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Плащанията за premium и допълнителни AI заявки се обработват от Stripe. GEOFEEL не съхранява пълни данни за банкови карти. Получаваме само информацията, необходима за потвърждение на успешното плащане и активиране на съответния достъп.",
+                    "Payments for premium access and additional AI requests are processed by Stripe. GEOFEEL does not store full bank card details. We receive only the information necessary to confirm successful payment and activate the relevant access.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("5. Колко дълго пазим данните", "5. How long we keep data")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Пазим данните, докато акаунтът е активен или докато това е необходимо за нормалната работа на услугата, счетоводните изисквания, сигурността и разрешаването на технически или административни казуси.",
+                    "We keep data while your account remains active or for as long as it is necessary for normal service operation, accounting requirements, security, and the resolution of technical or administrative issues.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("6. Твоите права", "6. Your rights")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Можеш да поискаш достъп до своите данни, корекция на неточна информация, ограничаване на обработката, изтриване на акаунта или експорт на наличните данни. За такива искания използвай страницата Contact.",
+                    "You can request access to your data, correction of inaccurate information, restriction of processing, account deletion, or export of available data. For such requests, please use the Contact page.")
+            </p>
+        </article>
+
+        <article class="privacy-section em-card">
+            <h2 class="privacy-section__title">@T.Pick("7. Промени по тази политика", "7. Changes to this policy")</h2>
+            <p class="privacy-section__text">
+                @T.Pick(
+                    "Възможно е периодично да обновяваме тази страница, когато променяме функционалности, външни услуги или начина, по който обработваме данни. При съществени промени ще публикуваме актуализирана версия тук.",
+                    "We may update this page from time to time when we change features, external services, or the way we process data. If the changes are significant, we will publish an updated version here.")
+            </p>
+        </article>
+    </div>
+</section>
