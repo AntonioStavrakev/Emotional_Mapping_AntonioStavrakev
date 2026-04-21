@@ -28,6 +28,7 @@ builder.Services.AddControllers()
     {
         opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         opts.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
 
 builder.Services.AddFluentValidationAutoValidation();

@@ -1,4 +1,5 @@
 using Emotional_Mapping.Domain.Enums;
+using System.Text.Json.Serialization;
 
 namespace Emotional_Mapping.Domain.Entities;
 
@@ -7,6 +8,7 @@ public class MapRecommendation
     public Guid Id { get; private set; }
 
     public Guid GeneratedMapId { get; private set; }
+    [JsonIgnore]
     public GeneratedMap GeneratedMap { get; private set; } = null!;
 
     public Guid PlaceId { get; private set; }
