@@ -114,6 +114,21 @@ const publicSlugFromPath = (() => {
 const publicSlug = publicSlugFromQuery || publicSlugFromPath;
 const isPublicView = Boolean(publicSlug);
 
+function currentMapLanguage() {
+    const lang = document.documentElement.lang || 'bg';
+    return lang.toLowerCase().startsWith('en') ? 'en' : 'bg';
+}
+
+function localizedMapFetch(url, options) {
+    const requestOptions = options ? { ...options } : {};
+    requestOptions.headers = {
+        ...(requestOptions.headers || {}),
+        'Accept-Language': currentMapLanguage()
+    };
+
+    return fetch(url, requestOptions);
+}
+
 const resultMap = L.map('resultMap').setView([42.7339, 25.4858], 7);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap',
@@ -139,7 +154,7 @@ if (isPublicView) {
 }
 
 async function loadResult(id) {
-    const r = await fetch('/api/maps/' + id);
+    const r = await localizedMapFetch('/api/maps/' + id);
     if (!r.ok) {
         showAlert('error', texts.mapNotFound);
         return;
@@ -153,7 +168,7 @@ async function loadResult(id) {
 }
 
 async function loadPublicResult(slug) {
-    const r = await fetch('/api/maps/public/' + encodeURIComponent(slug));
+    const r = await localizedMapFetch('/api/maps/public/' + encodeURIComponent(slug));
     if (!r.ok) {
         showAlert('error', texts.mapNotFound);
         return;

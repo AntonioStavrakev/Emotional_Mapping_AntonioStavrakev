@@ -17,10 +17,28 @@ public static class RoleSeeder
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        const string adminEmail = "admin@geofeel.bg";
+        const string adminEmail = "admin@geofeel.tech";
+        const string legacyAdminEmail = "admin@geofeel.bg";
         const string adminPass = "Admin123!";
 
         var admin = await userManager.FindByEmailAsync(adminEmail);
+
+        if (admin == null)
+        {
+            var legacyAdmin = await userManager.FindByEmailAsync(legacyAdminEmail);
+            if (legacyAdmin != null)
+            {
+                if (!string.Equals(legacyAdmin.UserName, adminEmail, StringComparison.OrdinalIgnoreCase))
+                    await EnsureSuccessAsync(await userManager.SetUserNameAsync(legacyAdmin, adminEmail));
+
+                if (!string.Equals(legacyAdmin.Email, adminEmail, StringComparison.OrdinalIgnoreCase))
+                    await EnsureSuccessAsync(await userManager.SetEmailAsync(legacyAdmin, adminEmail));
+
+                legacyAdmin.EmailConfirmed = true;
+                await EnsureSuccessAsync(await userManager.UpdateAsync(legacyAdmin));
+                admin = legacyAdmin;
+            }
+        }
 
         if (admin == null)
         {
@@ -41,5 +59,14 @@ public static class RoleSeeder
             if (!await userManager.IsInRoleAsync(admin, "Admin"))
                 await userManager.AddToRoleAsync(admin, "Admin");
         }
+    }
+
+    private static Task EnsureSuccessAsync(IdentityResult result)
+    {
+        if (result.Succeeded)
+            return Task.CompletedTask;
+
+        var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+        throw new InvalidOperationException($"Role seeding failed: {errors}");
     }
 }

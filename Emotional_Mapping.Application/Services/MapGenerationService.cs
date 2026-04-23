@@ -56,11 +56,12 @@ public class MapGenerationService
     {
         var language = NormalizeLanguage(dto.Language);
         var effectivePlaceType = dto.SelectedPlaceType ?? InferPlaceTypeHint(dto.QueryText, dto.SelectedEmotion);
+        var isAdmin = _currentUser.IsInRole("Admin");
 
         if (dto.CityId == Guid.Empty)
             throw new InvalidOperationException(language == "en" ? "Select a city." : "Избери град.");
 
-        if (_currentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(_currentUser.UserId))
+        if (!isAdmin && _currentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(_currentUser.UserId))
         {
             var quota = await GetDailyQuotaAsync(ct);
             if (quota.RemainingToday <= 0 && quota.ExtraCreditsRemaining <= 0)
@@ -134,7 +135,7 @@ public class MapGenerationService
 
         var aiResult = await _ai.AnalyzeAsync(aiInput, ct);
 
-        if (_currentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(_currentUser.UserId))
+        if (!isAdmin && _currentUser.IsAuthenticated && !string.IsNullOrWhiteSpace(_currentUser.UserId))
         {
             var quota = await GetDailyQuotaAsync(ct);
             if (quota.RemainingToday <= 0)
@@ -460,10 +461,27 @@ public class MapGenerationService
 
     public async Task<AiQuotaDto> GetDailyQuotaAsync(CancellationToken ct)
     {
-        var isPremium = _currentUser.IsInRole("SuperUser") || _currentUser.IsInRole("Admin");
+        var isAdmin = _currentUser.IsInRole("Admin");
+        var isPremium = _currentUser.IsInRole("SuperUser") || isAdmin;
         var limit = isPremium ? PremiumDailyLimit : FreeDailyLimit;
         var nowUtc = DateTime.UtcNow;
         var (todayStartUtc, todayEndUtc, nextResetUtc) = GetDailyQuotaBoundsUtc();
+
+        if (isAdmin)
+        {
+            return new AiQuotaDto
+            {
+                UsedToday = 0,
+                DailyLimit = 0,
+                RemainingToday = 0,
+                ExtraCreditsRemaining = 0,
+                ExtraCreditsExpireAtUtc = null,
+                NextResetAtUtc = nextResetUtc,
+                UsageRatio = 0,
+                IsPremium = true,
+                IsUnlimited = true
+            };
+        }
 
         if (!_currentUser.IsAuthenticated || string.IsNullOrWhiteSpace(_currentUser.UserId))
         {
@@ -476,7 +494,8 @@ public class MapGenerationService
                 ExtraCreditsExpireAtUtc = null,
                 NextResetAtUtc = nextResetUtc,
                 UsageRatio = 0,
-                IsPremium = false
+                IsPremium = false,
+                IsUnlimited = false
             };
         }
 
@@ -499,7 +518,8 @@ public class MapGenerationService
             ExtraCreditsExpireAtUtc = extraExpiresAtUtc,
             NextResetAtUtc = nextResetUtc,
             UsageRatio = limit == 0 ? 0 : Math.Clamp((double)usedToday / limit, 0, 1),
-            IsPremium = isPremium
+            IsPremium = isPremium,
+            IsUnlimited = false
         };
     }
 

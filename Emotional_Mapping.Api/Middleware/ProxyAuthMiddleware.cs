@@ -21,7 +21,7 @@ public class ProxyAuthMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Only process if not already authenticated
+
         if (context.User.Identity?.IsAuthenticated != true &&
             context.Request.Headers.TryGetValue("X-User-Email", out var emailHeader))
         {

@@ -10,4 +10,5 @@ public class AiQuotaDto
     public DateTime NextResetAtUtc { get; set; }
     public double UsageRatio { get; set; }
     public bool IsPremium { get; set; }
+    public bool IsUnlimited { get; set; }
 }

@@ -31,7 +31,16 @@ ViewData["Title"] = T["Nav.MyMaps"];
         open: @Js(T.Pick("Отвори", "Open"))
     };
 
-    fetch('/api/maps/mine')
+    function currentMapLanguage() {
+        const lang = document.documentElement.lang || 'bg';
+        return lang.toLowerCase().startsWith('en') ? 'en' : 'bg';
+    }
+
+    fetch('/api/maps/mine', {
+        headers: {
+            'Accept-Language': currentMapLanguage()
+        }
+    })
         .then(async r => {
             if (r.status === 401) {
                 grid.innerHTML = `<div class="empty"><div class="empty__icon">🔒</div><div class="empty__title">${texts.signIn}</div></div>`;

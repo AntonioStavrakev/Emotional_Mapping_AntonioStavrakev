@@ -65,7 +65,7 @@ public class OpenAiEmotionService : IAiEmotionService
             var raw = await resp.Content.ReadFromJsonAsync<ResponsesResponse>(JsonOpts, ct)
                       ?? throw new InvalidOperationException("OpenAI response is empty.");
 
-            // Responses API връща текст/структуриран output; ние взимаме parsed JSON от output_text  [oai_citation:4‡OpenAI Platform](https://platform.openai.com/docs/api-reference/responses?utm_source=chatgpt.com)
+            // Responses API връща текст/структуриран output; ние взимаме parsed JSON от output_text
             var json = raw.OutputText;
             if (string.IsNullOrWhiteSpace(json))
                 throw new InvalidOperationException("OpenAI returned empty output_text.");

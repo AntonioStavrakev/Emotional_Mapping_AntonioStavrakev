@@ -1,83 +1,27 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Emotional_Mapping.Web.Services;
 
 public class UserOnboardingService : IUserOnboardingService
 {
-    private static readonly SemaphoreSlim FileLock = new(1, 1);
-
     private readonly IContactEmailService _emailService;
-    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<UserOnboardingService> _logger;
 
     public UserOnboardingService(
         IContactEmailService emailService,
-        IWebHostEnvironment environment,
         ILogger<UserOnboardingService> logger)
     {
         _emailService = emailService;
-        _environment = environment;
         _logger = logger;
     }
 
     public async Task HandleNewRegistrationAsync(string email, string displayName, CancellationToken ct = default)
     {
-        await SaveRegisteredUserAsync(email, displayName, ct);
+        _ = ct;
         await SendWelcomeEmailSafeAsync(email, displayName);
-    }
-
-    private async Task SaveRegisteredUserAsync(string email, string displayName, CancellationToken ct)
-    {
-        var directory = Path.Combine(_environment.ContentRootPath, "App_Data");
-        var filePath = Path.Combine(directory, "registered-users.json");
-
-        Directory.CreateDirectory(directory);
-
-        await FileLock.WaitAsync(ct);
-        try
-        {
-            List<RegisteredUserEntry> users = new();
-
-            if (File.Exists(filePath))
-            {
-                await using var readStream = File.OpenRead(filePath);
-                users = await JsonSerializer.DeserializeAsync<List<RegisteredUserEntry>>(readStream, cancellationToken: ct)
-                    ?? new List<RegisteredUserEntry>();
-            }
-
-            var existing = users.FirstOrDefault(x =>
-                x.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
-
-            if (existing is null)
-            {
-                users.Add(new RegisteredUserEntry
-                {
-                    Email = email,
-                    DisplayName = displayName,
-                    CreatedAtUtc = DateTime.UtcNow
-                });
-            }
-            else
-            {
-                existing.DisplayName = displayName;
-            }
-
-            await using var writeStream = File.Create(filePath);
-            await JsonSerializer.SerializeAsync(writeStream, users.OrderBy(x => x.DisplayName).ToList(),
-                new JsonSerializerOptions { WriteIndented = true }, ct);
-        }
-        finally
-        {
-            FileLock.Release();
-        }
     }
 
     private async Task SendWelcomeEmailSafeAsync(string email, string displayName)
@@ -116,12 +60,5 @@ public class UserOnboardingService : IUserOnboardingService
         {
             _logger.LogWarning(ex, "Welcome email could not be sent to {Email}", email);
         }
-    }
-
-    private sealed class RegisteredUserEntry
-    {
-        public string Email { get; set; } = "";
-        public string DisplayName { get; set; } = "";
-        public DateTime CreatedAtUtc { get; set; }
     }
 }

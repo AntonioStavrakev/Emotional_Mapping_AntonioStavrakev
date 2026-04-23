@@ -61,27 +61,7 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
         });
 }
 
-// Apple login is temporarily disabled until an active Apple Developer account is available.
-// var appleClientId = builder.Configuration["Authentication:Apple:ClientId"];
-// var appleKeyId = builder.Configuration["Authentication:Apple:KeyId"];
-// var appleTeamId = builder.Configuration["Authentication:Apple:TeamId"];
-// var applePrivateKeyPath = builder.Configuration["Authentication:Apple:PrivateKey"];
-// if (!string.IsNullOrWhiteSpace(appleClientId) &&
-//     !string.IsNullOrWhiteSpace(appleKeyId) &&
-//     !string.IsNullOrWhiteSpace(appleTeamId) &&
-//     !string.IsNullOrWhiteSpace(applePrivateKeyPath) &&
-//     File.Exists(applePrivateKeyPath))
-// {
-//     builder.Services.AddAuthentication()
-//         .AddApple("Apple", options =>
-//         {
-//             options.SignInScheme = "External";
-//             options.ClientId = appleClientId;
-//             options.KeyId = appleKeyId;
-//             options.TeamId = appleTeamId;
-//             options.UsePrivateKey(_ => builder.Environment.ContentRootFileProvider.GetFileInfo(applePrivateKeyPath));
-//         });
-// }
+
 
 builder.Services.AddScoped<IContactEmailService, SmtpContactEmailService>();
 builder.Services.AddScoped<IUserOnboardingService, UserOnboardingService>();
@@ -132,3 +112,25 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// Apple login is temporarily disabled until an active Apple Developer account is available.
+// var appleClientId = builder.Configuration["Authentication:Apple:ClientId"];
+// var appleKeyId = builder.Configuration["Authentication:Apple:KeyId"];
+// var appleTeamId = builder.Configuration["Authentication:Apple:TeamId"];
+// var applePrivateKeyPath = builder.Configuration["Authentication:Apple:PrivateKey"];
+// if (!string.IsNullOrWhiteSpace(appleClientId) &&
+//     !string.IsNullOrWhiteSpace(appleKeyId) &&
+//     !string.IsNullOrWhiteSpace(appleTeamId) &&
+//     !string.IsNullOrWhiteSpace(applePrivateKeyPath) &&
+//     File.Exists(applePrivateKeyPath))
+// {
+//     builder.Services.AddAuthentication()
+//         .AddApple("Apple", options =>
+//         {
+//             options.SignInScheme = "External";
+//             options.ClientId = appleClientId;
+//             options.KeyId = appleKeyId;
+//             options.TeamId = appleTeamId;
+//             options.UsePrivateKey(_ => builder.Environment.ContentRootFileProvider.GetFileInfo(applePrivateKeyPath));
+//         });
+// }

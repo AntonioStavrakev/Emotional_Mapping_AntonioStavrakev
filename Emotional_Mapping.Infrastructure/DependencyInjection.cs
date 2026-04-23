@@ -154,7 +154,7 @@ public static class DependencyInjection
         });
 
         // IAiEmotionService избор:
-        // ако имаш OpenAI ключ -> OpenAiEmotionService
+        // OpenAI ключ -> OpenAiEmotionService
         // иначе -> RuleBasedEmotionAnalysisService
         var openAiKey = cfg["OpenAI:ApiKey"];
         if (string.IsNullOrWhiteSpace(openAiKey))

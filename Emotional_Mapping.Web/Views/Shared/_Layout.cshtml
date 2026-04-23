@@ -287,14 +287,25 @@
                     const extraExpiresAtUtc = data?.extraCreditsExpireAtUtc ? new Date(data.extraCreditsExpireAtUtc) : null;
                     const progress = Math.round(Math.min(1, Math.max(0, used / limit)) * 360);
                     const isPremium = Boolean(data?.isPremium);
+                    const isUnlimited = Boolean(data?.isUnlimited);
                     const isEnglish = @T.IsEnglish.ToString().ToLowerInvariant();
 
                     pill.classList.toggle('is-premium', isPremium);
-                    pill.classList.toggle('is-low', !isPremium && remaining <= 2);
-                    pill.classList.toggle('is-empty', !isPremium && remaining === 0 && extraCredits === 0);
+                    pill.classList.toggle('is-low', !isPremium && !isUnlimited && remaining <= 2);
+                    pill.classList.toggle('is-empty', !isPremium && !isUnlimited && remaining === 0 && extraCredits === 0);
 
                     ring.style.setProperty('--quota-progress', `${progress}deg`);
-                    title.textContent = isPremium ? @Js(T.Pick("Premium AI", "Premium AI")) : @Js(T.Pick("Безплатен AI", "Free AI"));
+                    title.textContent = isUnlimited
+                        ? @Js(T.Pick("Админ AI", "Admin AI"))
+                        : (isPremium ? @Js(T.Pick("Premium AI", "Premium AI")) : @Js(T.Pick("Безплатен AI", "Free AI")));
+
+                    if (isUnlimited) {
+                        ring.style.setProperty('--quota-progress', '360deg');
+                        value.textContent = isEnglish
+                            ? 'Unlimited requests'
+                            : 'Неограничени заявки';
+                        return;
+                    }
 
                     if (remaining === 0 && extraCredits === 0) {
                         value.textContent = isEnglish
