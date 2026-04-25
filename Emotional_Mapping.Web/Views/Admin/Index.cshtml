@@ -107,9 +107,14 @@
 </div>
 
 <div class="tp em-card" id="tp-reports">
-    <div class="em-card__title">@T.Pick("Сигнали", "Reports")</div>
-    <div style="margin-top:1rem">
-        <div class="em-alert em-alert-ok">@T.Pick("Няма нови сигнали.", "There are no new reports.")</div>
+    <div class="em-card__title">@T.Pick("Модерация", "Moderation")</div>
+    <div style="margin-top:1rem;display:grid;gap:1rem;">
+        <div style="color:#6b7080;font-size:.95rem;">
+            @T.Pick("Отвори модула за преглед на чакащи точки и сигнали.", "Open the module to review pending points and reports.")
+        </div>
+        <div>
+            <a href="/Moderator" class="btn-em btn-em-primary">@T.Pick("Отвори модерация", "Open moderation")</a>
+        </div>
     </div>
 </div>
 

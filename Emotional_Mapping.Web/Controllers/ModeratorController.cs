@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Emotional_Mapping.Web.Controllers;
 
-[Authorize(Roles = "Admin,Moderator")]
+[Authorize(Roles = "Admin")]
 public class ModeratorController : Controller
 {
     // GET /Moderator

@@ -39,6 +39,18 @@ public class EmotionalPointRepository : IEmotionalPointRepository
         return await q.OrderByDescending(x => x.CreatedAtUtc).ToListAsync(ct);
     }
 
+    public async Task<List<EmotionalPoint>> GetPendingAsync(CancellationToken ct)
+    {
+        return await _db.EmotionalPoints
+            .AsNoTracking()
+            .Include(x => x.City)
+            .Include(x => x.Place)
+            .Include(x => x.District)
+            .Where(x => !x.IsApproved)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ToListAsync(ct);
+    }
+
     public Task DeleteAsync(EmotionalPoint point, CancellationToken ct)
     {
         _db.EmotionalPoints.Remove(point);

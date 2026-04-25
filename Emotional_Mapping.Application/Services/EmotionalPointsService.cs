@@ -59,7 +59,7 @@ public class EmotionalPointsService
             note: NormalizeOptional(dto.Note),
             timeOfDay: NormalizeOptional(dto.TimeOfDay),
             isAnonymous: dto.IsAnonymous,
-            isApproved: true
+            isApproved: _user.IsInRole("Admin")
         );
 
         point.DistrictId = place?.DistrictId;
@@ -84,6 +84,18 @@ public class EmotionalPointsService
         await _repo.AddAsync(point, ct);
         await _uow.SaveChangesAsync(ct);
         return point.Id;
+    }
+
+    public async Task ApproveAsync(Guid id, CancellationToken ct)
+    {
+        if (!_user.IsAuthenticated || !_user.IsInRole("Admin"))
+            throw new InvalidOperationException("Нямаш право да одобряваш точки.");
+
+        var point = await _repo.GetAsync(id, ct)
+                    ?? throw new InvalidOperationException("Точката не е намерена.");
+
+        point.Approve();
+        await _uow.SaveChangesAsync(ct);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)

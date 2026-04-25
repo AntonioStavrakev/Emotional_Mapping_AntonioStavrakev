@@ -1,114 +1,276 @@
 @{
-    ViewData["Title"] = T.Pick("Модератор панел", "Moderator panel");
+    ViewData["Title"] = T.Pick("Модерация", "Moderation");
 }
 
 <div class="em-page-header fade-up">
     <span class="em-page-header__icon">🛡️</span>
     <div class="em-page-header__badge">🛠️ @T.Pick("Модерация", "Moderation")</div>
-    <h1 class="em-page-title">@T.Pick("Модератор панел", "Moderator panel")</h1>
-    <p class="em-page-sub">@T.Pick("Преглед и управление на потребителско съдържание", "Review and manage user-generated content")</p>
+    <h1 class="em-page-title">@T.Pick("Модерационен модул", "Moderation module")</h1>
+    <p class="em-page-sub">@T.Pick("Преглед на чакащи точки и обработка на потребителски сигнали.", "Review pending points and process user reports.")</p>
 </div>
 
 <div class="tabs fade-up fade-up-1">
-    <button class="tbtn on" onclick="showTab('pending',this)">@T.Pick("Неодобрени точки", "Pending points")</button>
-    <button class="tbtn" onclick="showTab('reported',this)">@T.Pick("Сигнализирани", "Reported")</button>
+    <button class="tbtn on" onclick="showTab('pending', this)">@T.Pick("Чакащи точки", "Pending points")</button>
+    <button class="tbtn" onclick="showTab('reported', this)">@T.Pick("Сигнали", "Reports")</button>
 </div>
 
 <div class="tp on" id="tp-pending">
     <div class="em-alert em-alert-info" style="margin-bottom:1.5rem;">
-        @T.Pick("Прегледай новите точки и ги одобри или отхвърли. Одобрените се появяват на общата карта.", "Review new points and approve or reject them. Approved ones appear on the public map.")
+        @T.Pick("Ново добавените точки от потребители минават през този модул. Одобрените се появяват на картата, а отхвърлените се премахват.", "New user-submitted points pass through this module. Approved points appear on the map, while rejected ones are removed.")
     </div>
     <div id="pendList">
         <p style="color:#6b7080">@T.Pick("Зареждане...", "Loading...")</p>
     </div>
 </div>
 
-<div class="tp em-card" id="tp-reported">
-    <div class="em-card__title">@T.Pick("Сигнализирано съдържание", "Reported content")</div>
-    <div style="margin-top:1rem">
-        <div class="em-alert em-alert-ok">@T.Pick("Няма активни сигнали.", "There are no active reports.")</div>
+<div class="tp" id="tp-reported">
+    <div class="em-alert em-alert-info" style="margin-bottom:1.5rem;">
+        @T.Pick("Всеки сигнал може да бъде маркиран като „В преглед“, „Решен“ или „Отхвърлен“.", "Each report can be marked as In review, Resolved, or Rejected.")
+    </div>
+    <div id="reportList">
+        <p style="color:#6b7080">@T.Pick("Зареждане...", "Loading...")</p>
     </div>
 </div>
 
 @section Scripts {
 <script>
 const texts = {
-    noPendingPoints: '@T.Pick("Няма неодобрени точки.", "There are no pending points.")',
+    noPendingPoints: '@T.Pick("Няма чакащи точки.", "There are no pending points.")',
+    noReports: '@T.Pick("Няма активни сигнали.", "There are no active reports.")',
     untitled: '@T.Pick("Без заглавие", "Untitled")',
     noDescription: '@T.Pick("Без описание.", "No description.")',
     intensity: '@T.Pick("Интензитет", "Intensity")',
     anonymous: '@T.Pick("Анонимна", "Anonymous")',
     yes: '@T.Pick("Да", "Yes")',
     no: '@T.Pick("Не", "No")',
+    city: '@T.Pick("Град", "City")',
+    place: '@T.Pick("Място", "Place")',
+    district: '@T.Pick("Район", "District")',
     approve: '@T.Pick("Одобри", "Approve")',
-    delete: '@T.Pick("Изтрий", "Delete")',
-    loadError: '@T.Pick("Грешка при зареждане.", "Failed to load.")',
-    deleteConfirm: '@T.Pick("Изтриваш тази точка?", "Delete this point?")'
+    reject: '@T.Pick("Отхвърли", "Reject")',
+    review: '@T.Pick("В преглед", "In review")',
+    resolve: '@T.Pick("Решен", "Resolved")',
+    dismiss: '@T.Pick("Отхвърлен", "Rejected")',
+    reason: '@T.Pick("Причина", "Reason")',
+    created: '@T.Pick("Подаден", "Created")',
+    targetPoint: '@T.Pick("Точка", "Point")',
+    targetPlace: '@T.Pick("Място", "Place")',
+    targetMissing: '@T.Pick("Свързаното съдържание липсва или е премахнато.", "The related content is missing or has already been removed.")',
+    pointApproved: '@T.Pick("Одобрена точка", "Approved point")',
+    pointPending: '@T.Pick("Чакаща точка", "Pending point")',
+    loadPendingError: '@T.Pick("Грешка при зареждане на чакащите точки.", "Failed to load pending points.")',
+    loadReportsError: '@T.Pick("Грешка при зареждане на сигналите.", "Failed to load reports.")',
+    approveFailed: '@T.Pick("Неуспешно одобряване на точката.", "Failed to approve the point.")',
+    rejectFailed: '@T.Pick("Неуспешно отхвърляне на точката.", "Failed to reject the point.")',
+    reviewFailed: '@T.Pick("Неуспешно маркиране на сигнала.", "Failed to mark the report as in review.")',
+    resolveFailed: '@T.Pick("Неуспешно приключване на сигнала.", "Failed to resolve the report.")',
+    dismissFailed: '@T.Pick("Неуспешно отхвърляне на сигнала.", "Failed to reject the report.")',
+    rejectPointConfirm: '@T.Pick("Отхвърляш тази точка?", "Reject this point?")',
+    statusOpen: '@T.Pick("Отворен", "Open")',
+    statusInReview: '@T.Pick("В преглед", "In review")',
+    statusResolved: '@T.Pick("Решен", "Resolved")',
+    statusRejected: '@T.Pick("Отхвърлен", "Rejected")'
 };
 
-function showTab(n, btn) {
-    document.querySelectorAll('.tp').forEach(function(p) { p.classList.remove('on'); });
-    document.querySelectorAll('.tbtn').forEach(function(b) { b.classList.remove('on'); });
-    document.getElementById('tp-' + n).classList.add('on');
-    btn.classList.add('on');
-    if (n === 'pending') loadPending();
+function showTab(name, button) {
+    document.querySelectorAll('.tp').forEach(function(panel) { panel.classList.remove('on'); });
+    document.querySelectorAll('.tbtn').forEach(function(tab) { tab.classList.remove('on'); });
+    document.getElementById('tp-' + name).classList.add('on');
+    button.classList.add('on');
+
+    if (name === 'pending') loadPending();
+    if (name === 'reported') loadReported();
 }
 
-function loadPending() {
-    fetch('/api/points?cityId=00000000-0000-0000-0000-000000000000')
-        .then(function(r) { return r.ok ? r.json() : []; })
-        .then(function(pts) {
-            var pend = (pts || []).filter(function(p) { return !p.isApproved; });
-            if (!pend.length) {
-                document.getElementById('pendList').innerHTML =
-                    '<div class="em-alert em-alert-ok">' + texts.noPendingPoints + '</div>';
-                return;
-            }
-            document.getElementById('pendList').innerHTML = pend.map(function(p) {
-                return '<div class="pcard">'
-                    + '<div class="pcard__hdr">'
-                    + '<div>'
-                    + '<strong style="font-size:.9rem">' + esc(p.title || texts.untitled) + '</strong>'
-                    + '<span class="em-badge em-badge-joy" style="margin-left:.65rem">'
-                    + esc(toBgEmotion(p.emotion) || '') + '</span>'
-                    + '</div>'
-                    + '<span style="font-size:.75rem;color:#6b7080">'
-                    + (p.createdAtUtc ? new Date(p.createdAtUtc).toLocaleDateString(document.documentElement.lang || 'bg-BG') : '')
-                    + '</span>'
-                    + '</div>'
-                    + '<div class="pcard__body">' + esc(p.note || texts.noDescription) + '</div>'
-                    + '<div style="font-size:.75rem;color:#6b7080;margin-bottom:.75rem">'
-                    + texts.intensity + ': ' + (p.intensity || '—')
-                    + ' &bull; ' + texts.anonymous + ': ' + (p.isAnonymous ? texts.yes : texts.no)
-                    + '</div>'
-                    + '<div class="pcard__acts">'
-                    + '<button class="btn-em btn-em-success btn-em-sm" onclick="approveP(\''
-                    + p.id + '\')">' + texts.approve + '</button>'
-                    + '<button class="btn-em btn-em-danger btn-em-sm" onclick="deleteP(\''
-                    + p.id + '\')">' + texts.delete + '</button>'
-                    + '</div></div>';
-            }).join('');
-        }).catch(function() {
+function esc(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function fmtDate(value) {
+    if (!value) return '—';
+    return new Date(value).toLocaleString(document.documentElement.lang || 'bg-BG');
+}
+
+function emotionLabel(value) {
+    if (!value) return '';
+    return typeof toBgEmotion === 'function' ? toBgEmotion(value) : value;
+}
+
+function reportStatusLabel(status) {
+    switch (status) {
+        case 'InReview': return texts.statusInReview;
+        case 'Resolved': return texts.statusResolved;
+        case 'Rejected': return texts.statusRejected;
+        default: return texts.statusOpen;
+    }
+}
+
+async function callAction(url, options, onSuccess, fallbackMessage, button) {
+    if (button && window.GeoFeelUi && !window.GeoFeelUi.beginButtonAction(button, button.textContent.trim())) {
+        return;
+    }
+
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) throw new Error(fallbackMessage);
+        await onSuccess();
+    } catch {
+        if (button && window.GeoFeelUi) {
+            window.GeoFeelUi.endButtonAction(button);
+        }
+        alert(fallbackMessage);
+    }
+}
+
+async function loadPending() {
+    try {
+        const response = await fetch('/api/points/pending');
+        const points = response.ok ? await response.json() : [];
+
+        if (!points.length) {
             document.getElementById('pendList').innerHTML =
-                '<div class="em-alert em-alert-error">' + texts.loadError + '</div>';
-        });
+                '<div class="em-alert em-alert-ok">' + texts.noPendingPoints + '</div>';
+            return;
+        }
+
+        document.getElementById('pendList').innerHTML = points.map(function(point) {
+            var meta = [
+                texts.city + ': ' + esc(point.cityName || '—'),
+                texts.place + ': ' + esc(point.placeName || '—'),
+                texts.district + ': ' + esc(point.districtName || '—'),
+                texts.intensity + ': ' + esc(point.intensity || '—'),
+                texts.anonymous + ': ' + (point.isAnonymous ? texts.yes : texts.no)
+            ].join(' &bull; ');
+
+            return '<div class="pcard">'
+                + '<div class="pcard__hdr">'
+                + '<div>'
+                + '<strong style="font-size:.9rem">' + esc(point.title || texts.untitled) + '</strong>'
+                + '<span class="em-badge em-badge-joy" style="margin-left:.65rem">' + esc(emotionLabel(point.emotion)) + '</span>'
+                + '</div>'
+                + '<span style="font-size:.75rem;color:#6b7080">' + fmtDate(point.createdAtUtc) + '</span>'
+                + '</div>'
+                + '<div class="pcard__body">' + esc(point.note || texts.noDescription) + '</div>'
+                + '<div style="font-size:.75rem;color:#6b7080;margin-bottom:.75rem">' + meta + '</div>'
+                + '<div class="pcard__acts">'
+                + '<button class="btn-em btn-em-success btn-em-sm" onclick="approvePoint(\'' + point.id + '\', this)">' + texts.approve + '</button>'
+                + '<button class="btn-em btn-em-danger btn-em-sm" onclick="rejectPoint(\'' + point.id + '\', this)">' + texts.reject + '</button>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    } catch {
+        document.getElementById('pendList').innerHTML =
+            '<div class="em-alert em-alert-error">' + texts.loadPendingError + '</div>';
+    }
 }
 
-function approveP(id) {
-    fetch('/api/points/' + id + '/approve', { method: 'POST' })
-        .then(function(r) { if (r.ok) loadPending(); })
-        .catch(function() {});
+function approvePoint(id, button) {
+    callAction(
+        '/api/points/' + id + '/approve',
+        { method: 'POST' },
+        loadPending,
+        texts.approveFailed,
+        button
+    );
 }
 
-function deleteP(id) {
-    if (!confirm(texts.deleteConfirm)) return;
-    fetch('/api/admin/points/' + id, { method: 'DELETE' })
-        .then(function(r) { if (r.ok) loadPending(); })
-        .catch(function() {});
+function rejectPoint(id, button) {
+    if (!confirm(texts.rejectPointConfirm)) return;
+
+    callAction(
+        '/api/points/' + id,
+        { method: 'DELETE' },
+        loadPending,
+        texts.rejectFailed,
+        button
+    );
 }
 
-function esc(s) {
-    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+async function loadReported() {
+    try {
+        const response = await fetch('/api/reports');
+        const reports = response.ok ? await response.json() : [];
+
+        if (!reports.length) {
+            document.getElementById('reportList').innerHTML =
+                '<div class="em-alert em-alert-ok">' + texts.noReports + '</div>';
+            return;
+        }
+
+        document.getElementById('reportList').innerHTML = reports.map(function(report) {
+            var targetHtml = '';
+
+            if (report.targetType === 'Point') {
+                targetHtml = report.emotionalPointId
+                    ? '<div style="font-size:.82rem;color:#6b7080;margin-top:.4rem;">'
+                        + '<strong>' + texts.targetPoint + ':</strong> '
+                        + esc(report.pointTitle || texts.untitled)
+                        + (report.pointEmotion ? ' &bull; ' + esc(emotionLabel(report.pointEmotion)) : '')
+                        + ' &bull; '
+                        + (report.pointIsApproved ? texts.pointApproved : texts.pointPending)
+                        + '</div>'
+                        + '<div style="font-size:.78rem;color:#6b7080;margin-top:.35rem;">'
+                        + esc(report.pointNote || texts.noDescription)
+                        + '</div>'
+                    : '<div style="font-size:.82rem;color:#6b7080;margin-top:.4rem;">' + texts.targetMissing + '</div>';
+            } else {
+                targetHtml = report.placeId
+                    ? '<div style="font-size:.82rem;color:#6b7080;margin-top:.4rem;">'
+                        + '<strong>' + texts.targetPlace + ':</strong> '
+                        + esc(report.placeName || texts.untitled)
+                        + '</div>'
+                        + '<div style="font-size:.78rem;color:#6b7080;margin-top:.35rem;">'
+                        + esc(report.placeAddress || texts.noDescription)
+                        + '</div>'
+                    : '<div style="font-size:.82rem;color:#6b7080;margin-top:.4rem;">' + texts.targetMissing + '</div>';
+            }
+
+            return '<div class="pcard">'
+                + '<div class="pcard__hdr">'
+                + '<div>'
+                + '<strong style="font-size:.9rem">' + texts.reason + '</strong>'
+                + '<span class="em-badge em-badge-calm" style="margin-left:.65rem">' + esc(reportStatusLabel(report.status)) + '</span>'
+                + '</div>'
+                + '<span style="font-size:.75rem;color:#6b7080">' + fmtDate(report.createdAtUtc) + '</span>'
+                + '</div>'
+                + '<div class="pcard__body">' + esc(report.reason || texts.noDescription) + '</div>'
+                + targetHtml
+                + '<div style="font-size:.75rem;color:#6b7080;margin-top:.75rem;">'
+                + texts.created + ': ' + fmtDate(report.createdAtUtc)
+                + '</div>'
+                + '<div class="pcard__acts" style="margin-top:.85rem;">'
+                + (report.status !== 'InReview'
+                    ? '<button class="btn-em btn-em-secondary btn-em-sm" onclick="markReport(\'' + report.id + '\', \'review\', this)">' + texts.review + '</button>'
+                    : '')
+                + '<button class="btn-em btn-em-success btn-em-sm" onclick="markReport(\'' + report.id + '\', \'resolve\', this)">' + texts.resolve + '</button>'
+                + '<button class="btn-em btn-em-danger btn-em-sm" onclick="markReport(\'' + report.id + '\', \'reject\', this)">' + texts.dismiss + '</button>'
+                + '</div>'
+                + '</div>';
+        }).join('');
+    } catch {
+        document.getElementById('reportList').innerHTML =
+            '<div class="em-alert em-alert-error">' + texts.loadReportsError + '</div>';
+    }
+}
+
+function markReport(id, action, button) {
+    var errors = {
+        review: texts.reviewFailed,
+        resolve: texts.resolveFailed,
+        reject: texts.dismissFailed
+    };
+
+    callAction(
+        '/api/reports/' + id + '/' + action,
+        { method: 'POST' },
+        loadReported,
+        errors[action] || texts.loadReportsError,
+        button
+    );
 }
 
 loadPending();

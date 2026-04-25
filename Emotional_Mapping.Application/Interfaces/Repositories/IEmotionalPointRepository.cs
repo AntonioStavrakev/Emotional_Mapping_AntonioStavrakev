@@ -8,5 +8,6 @@ public interface IEmotionalPointRepository
     Task AddAsync(EmotionalPoint point, CancellationToken ct);
     Task<EmotionalPoint?> GetAsync(Guid id, CancellationToken ct);
     Task<List<EmotionalPoint>> GetByCityAsync(Guid cityId, EmotionType? emotion, CancellationToken ct);
+    Task<List<EmotionalPoint>> GetPendingAsync(CancellationToken ct);
     Task DeleteAsync(EmotionalPoint point, CancellationToken ct);
 }
