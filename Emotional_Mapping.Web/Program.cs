@@ -113,7 +113,7 @@ app.MapControllerRoute(
 
 app.Run();
 
-// Apple login is temporarily disabled until an active Apple Developer account is available.
+// Apple login is temporarily disabled until an active Apple Developer account is available (paid).
 // var appleClientId = builder.Configuration["Authentication:Apple:ClientId"];
 // var appleKeyId = builder.Configuration["Authentication:Apple:KeyId"];
 // var appleTeamId = builder.Configuration["Authentication:Apple:TeamId"];

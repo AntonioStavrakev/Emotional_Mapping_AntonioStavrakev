@@ -1296,6 +1296,7 @@ input[type=range] {
 
 .hero__visual {
   min-height: 420px;
+  width: min(100%, 500px);
   border-radius: 34px;
   background: linear-gradient(135deg, rgba(137,217,87,.10), rgba(201,226,101,.16), rgba(115,201,190,.12));
   border: 1px solid var(--border);
@@ -1319,8 +1320,8 @@ input[type=range] {
 /* HERO BALLOONS - ONE LINE */
 .emotion-cloud {
   position: relative;
-  width: 420px;
-  height: 360px;
+  width: min(100%, 420px);
+  aspect-ratio: 7 / 6;
   margin: 0 auto;
 }
 
@@ -1332,7 +1333,7 @@ input[type=range] {
   padding: 14px;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 14px;
+  font-size: clamp(11px, 1.2vw, 14px);
   line-height: 1.1;
   letter-spacing: -.03em;
   text-align: center;
@@ -1350,10 +1351,10 @@ input[type=range] {
 }
 
 .e1 {
-  width: 132px;
-  height: 132px;
-  top: 86px;
-  left: 18px;
+  width: 31.43%;
+  height: 36.67%;
+  top: 23.89%;
+  left: 4.29%;
   z-index: 5;
   border: 3px solid rgba(91,200,194,.95);
   background: rgba(91,200,194,.15);
@@ -1362,10 +1363,10 @@ input[type=range] {
 }
 
 .e2 {
-  width: 104px;
-  height: 104px;
-  top: 18px;
-  left: 226px;
+  width: 24.76%;
+  height: 28.89%;
+  top: 5%;
+  left: 53.81%;
   z-index: 2;
   border: 3px solid rgba(246,201,72,.95);
   background: rgba(246,201,72,.14);
@@ -1374,10 +1375,10 @@ input[type=range] {
 }
 
 .e3 {
-  width: 126px;
-  height: 126px;
-  top: 196px;
-  left: 150px;
+  width: 30%;
+  height: 35%;
+  top: 54.44%;
+  left: 35.71%;
   z-index: 2;
   border: 3px solid rgba(124,111,247,.95);
   background: rgba(124,111,247,.12);
@@ -1386,10 +1387,10 @@ input[type=range] {
 }
 
 .e4 {
-  width: 116px;
-  height: 116px;
-  top: 216px;
-  left: 18px;
+  width: 27.62%;
+  height: 32.22%;
+  top: 60%;
+  left: 4.29%;
   z-index: 1;
   border: 3px solid rgba(232,112,144,.95);
   background: rgba(232,112,144,.12);
@@ -1398,10 +1399,10 @@ input[type=range] {
 }
 
 .e5 {
-  width: 112px;
-  height: 112px;
-  top: 104px;
-  left: 296px;
+  width: 26.67%;
+  height: 31.11%;
+  top: 28.89%;
+  left: 70.48%;
   z-index: 2;
   border: 3px solid rgba(99,130,200,.95);
   background: rgba(99,130,200,.13);
@@ -1410,10 +1411,10 @@ input[type=range] {
 }
 
 .e6 {
-  width: 100px;
-  height: 100px;
-  top: 12px;
-  left: 122px;
+  width: 23.81%;
+  height: 27.78%;
+  top: 3.33%;
+  left: 29.05%;
   z-index: 4;
   border: 3px solid rgba(137,217,87,.96);
   background: rgba(137,217,87,.13);
@@ -1422,10 +1423,10 @@ input[type=range] {
 }
 
 .e7 {
-  width: 98px;
-  height: 98px;
-  top: 250px;
-  left: 292px;
+  width: 23.33%;
+  height: 27.22%;
+  top: 69.44%;
+  left: 69.52%;
   z-index: 1;
   border: 3px solid rgba(201,226,101,.96);
   background: rgba(201,226,101,.14);
@@ -2659,9 +2660,9 @@ input[type=range] {
     flex-wrap: wrap;
   }
 
-  .emotion-cloud {
-    width: 340px;
-    height: 320px;
+  .hero__visual {
+    width: min(100%, 440px);
+    min-height: 360px;
   }
 
   .roles-grid,
@@ -2685,7 +2686,9 @@ input[type=range] {
   }
 
   .hero__visual {
-    display: none;
+    width: min(100%, 420px);
+    min-height: 340px;
+    margin: 10px auto 0;
   }
 
   .features {
@@ -2747,6 +2750,13 @@ input[type=range] {
 
   .em-nav {
     padding: 0 1rem;
+  }
+
+  .hero__visual {
+    width: min(100%, 340px);
+    min-height: 290px;
+    padding: 14px;
+    border-radius: 26px;
   }
 
   .em-footer {
